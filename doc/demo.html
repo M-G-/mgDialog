@@ -70,6 +70,64 @@
 	</script>
 	<br/>
 
+	<h2>1.4方法</h2>
+	<button class="btn" id="d1_4_1">width()和height()</button>
+	<script>
+		var d1_4_1 = $.dialog({
+			content : 'asdasdasdasd<br>aasdadsasdad<br>',
+			height : 200,
+			width : 200,
+//			fixed : true,
+			bottom : 10,
+			right : 10,
+			onWidth : function(){
+				this.width(200).height(200).position()
+			},
+			onHeight : function(){
+				this.width(500).height(500).position()
+			},
+			onTitle : function(){
+				this.title('我的标题！')
+			},
+			onContent : function(){
+				this.content('我的内容！').position();
+//				this.content('<i>我的内容！</i>');
+//				this.content($('#d1_4_1'));
+			},
+			onAll : function(){
+//				this.title('我的标题！').content('我的内容！').position();
+				this.width(600).height(1000).position();
+			},
+			buttons : [
+				{
+					call : 'width',
+					text : 'width'
+				},
+				{
+					call : 'height',
+					text : 'height'
+				},
+//				{
+//					call : 'title',
+//					text : 'title'
+//				},
+//				{
+//					call : 'content',
+//					text : 'content'
+//				},
+//				{
+//					call : 'all',
+//					text : 'all'
+//				}
+			]
+		});
+		$('#d1_4_1').on('click',function(){
+			d1_4_1.open()
+		});
+
+	</script>
+	<br/>
+
 	<h2>1.3结构配置</h2>
 	<button class="btn" id="d3_1">没有标题</button>
 	<button class="btn" id="d3_3">自定义标题内容</button>

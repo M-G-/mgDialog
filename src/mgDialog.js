@@ -22,19 +22,21 @@
 * getButton(index,id)
 *
 * 期望：
-* title(str|jqObj)
-* content(str|jqObj)
-* buttons(str|jqObj)
+* title(str|jqObj) [√]
+* content(str|jqObj) [√]
+* buttons(str|jqObj) [√]
 * focus()
 * blur()
-* width(num)
-* height(num)
+* width(num) [√]
+* height(num) [√]
 * reset()
+* position() [√]
 * autoFocus
-* 链式调用
+* 链式调用 [√]
+* window.onresize
 *
 * */
-(function(window,$){
+(function(window,$,document){
 	//全局配置
 	var _config = {
 		hasMask  : true,  //是否启用背景遮罩
@@ -50,7 +52,8 @@
 	};
 
 	var _baseZ = 1000; //z-index基准
-	var btnReg = /^btn:/;
+	var _baseGap = 10; //默认间隙
+	//var btnReg = /^btn:/;
 	var cdReg = /{%cd}/gi;
 
 	var $mask = $('<div class="mgDialog_mask" style="z-index:'+_baseZ+'"></div>'),
@@ -207,6 +210,10 @@
 		item.style.right = 'auto';
 	}
 
+	function getHtml(text){
+		return text && this._bCD ? text.replace(cdReg,stCD) : text;
+	}
+
 	var Dialog = function (cfg,userWrap){
 		var config = {
 			top : null,
@@ -274,8 +281,9 @@
 				}
 			}
 		};
-
-	}
+		this._oldW = 0;
+		this._oldH = 0;
+	};
 
 	Dialog.prototype = {
 
@@ -301,12 +309,13 @@
 				var role = target.data('role');
 
 				//执行按钮标记的函数
-				if(role && btnReg.test(role) && !target.hasClass('disabled')){
+				if(role && /^btn:/.test(role) && !target.hasClass('disabled')){
 					that.doFns(role.split(':')[1].split(','))
 				}
 			}
 
 			config.drag && drag(dom.wrap,this._id)
+
 
 
 		},
@@ -328,7 +337,7 @@
 
 					}else if(typeof config[fnName] === 'function'){
 
-						if(config[fnName]() === false){
+						if(config[fnName].call(this) === false){
 							break;
 						}
 					}
@@ -340,7 +349,6 @@
 
 			var config = this.config;
 			var wrap = $wrap.clone();
-			var that = this;
 
 			//创建标题
 			if(config.hasTitle){
@@ -355,49 +363,54 @@
 			}
 
 			//创建内容
-			wrap.append($content.clone().css('text-align',config.contentAlign).html(getHtml(config.content))).append(this.dom.hk);
+			wrap.append($content.clone().css('text-align',config.contentAlign).html(getHtml.call(this,config.content))).append(this.dom.hk);
 
 			//创建按钮
-			if(config.buttons && config.buttons.length > 0){
+			if($.isArray(config.buttons) && config.buttons.length > 0){
 				var footer = $footer.clone().addClass('mgDialog_align_' + config.buttonsAlign).css('text-align',config.buttonsAlign);
-				for(var i= 0,b; b = config.buttons[i]; i++){
-					footer.append(function(){
-						var btn;
-
-						if(typeof b === 'string'){
-							btn = $(b)
-						}else if(typeof b === 'object'){
-							btn = $btn.clone();
-
-							if(b.type === 'confirm'){
-								btn.addClass('mgDialog_button_confirm').html(getHtml(b.text) || '确定').attr('data-role','btn:' +  (b.call || 'confirm,close'));
-							}else if(b.type === 'cancel'){
-								btn.html(getHtml(b.text) || '取消').attr('data-role','btn:' + (b.call || 'cancel,close'));
-							}else{
-								btn.html(getHtml(b.text) || '按钮').attr('data-role','btn:' + (b.call || ''));
-							}
-						}
-
-						b.disabled && btn.addClass('disabled');
-						typeof b.id === 'string' && b.id !== '' && btn.attr('data-id', b.id);
-
-						return btn;
-
-					})
-				}
-				wrap.append(footer);
-			}
-
-			function getHtml(text){
-				return text && that._bCD ? text.replace(cdReg,stCD) : text;
+				wrap.append(footer.append(this.cerateButtons(this.config.buttons)));
 			}
 
 			return wrap;
 
 		},
+		cerateButtons : function(arr){
+
+			var btns;
+
+			for(var i= 0,b; b = arr[i]; i++){
+				btns = btns ? btns.add(newBtn(b)) : newBtn(b);
+			}
+
+			function newBtn(b){
+				var btn;
+				if(typeof b === 'string'){
+					btn = $(b)
+				}else if(typeof b === 'object'){
+					btn = $btn.clone();
+
+					if(b.type === 'confirm'){
+						btn.addClass('mgDialog_button_confirm').html(getHtml.call(this,b.text) || '确定').attr('data-role','btn:' +  (b.call || 'confirm,close'));
+					}else if(b.type === 'cancel'){
+						btn.html(getHtml.call(this,b.text) || '取消').attr('data-role','btn:' + (b.call || 'cancel,close'));
+					}else{
+						btn.html(getHtml.call(this,b.text) || '按钮').attr('data-role','btn:' + (b.call || ''));
+					}
+				}
+
+				b.disabled && btn.addClass('disabled');
+				typeof b.id === 'string' && b.id !== '' && btn.attr('data-id', b.id);
+
+				return btn;
+			}
+
+			return btns;
+
+
+		},
 		open : function(b){
 
-			if(this._bOpen === true || this.test(b,this.config.onOpen) === false) return;
+			if(this._bOpen === true || this.test(b,this.config.onOpen) === false) return this;
 
 			_opened ++;
 
@@ -445,10 +458,10 @@
 
 			this.config.hotKeys && $(document).on('keyup',{that:this},this._hotkey);
 
+			return this;
 		},
-
 		close : function(b){
-			if(this._bOpen === false || this.test(b,this.config.onClose) === false) return;
+			if(this._bOpen === false || this.test(b,this.config.onClose) === false) return this;
 
 			var that = this;
 			var wrap = this.dom.wrap;
@@ -488,33 +501,33 @@
 				that.config.autoDestroy && that.destroy();
 			}
 
-		},
+			return this;
 
+		},
 		test : function(b,fn){
 
 			if(b === false){
 				return  false
 			}else{
-				return  typeof fn !== 'function' ? true : fn() !== false ;
+				return  typeof fn !== 'function' ? true : fn.call(this) !== false ;
 			}
 
 		},
 		setPosition : function(){
 			var wrap = this.dom.wrap,
+				config = this.config,
 				clientW = document.documentElement.clientWidth,
 				clientH = document.documentElement.clientHeight,
 				scrollTop = document.body.scrollTop || document.documentElement.scrollTop,
 				scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft,
 				width = wrap.outerWidth(),
-				height = wrap.outerHeight();
+				height = wrap.outerHeight(),
+				positionX = 0,
+				positionY = 0,
+				dirX = typeof config.left === 'number' ? 'left' : typeof config.right === 'number' ? 'right' : 'center',
+				dirY = typeof config.top === 'number' ? 'top' : typeof config.bottom === 'number' ? 'bottom' : 'center';
 
-			var config = this.config;
-			var fixed = config.fixed;
-
-			var positionX = 0;
-			var positionY = 0;
-			var dirX = typeof config.left === 'number' ? 'left' : typeof config.right === 'number' ? 'right' : 'center';
-			var dirY = typeof config.top === 'number' ? 'top' : typeof config.bottom === 'number' ? 'bottom' : 'center';
+			var _top,_left;
 
 			wrap.css({
 				left : 'auto',
@@ -523,17 +536,19 @@
 				bottom : 'auto'
 			});
 
-			if(fixed){
+			if(config.fixed){
 				if(dirY === 'center'){
 					dirY = 'top';
-					positionY = (clientH - height)/2;
+					_top = (clientH - height)/2;
+					positionY = _top < 10 ? 10 : _top;
 				}else{
 					positionY = config[dirY];
 				}
 
 				if(dirX === 'center'){
 					dirX = 'left';
-					positionX = (clientW - width)/2;
+					_left = (clientW - width)/2;
+					positionX = _left < 10 ? 10 : _left;
 				}else{
 					positionX = config[dirX];
 				}
@@ -542,13 +557,15 @@
 
 			}else{
 				if(dirY === 'center'){
-					positionY = scrollTop + (clientH - height)/2;
+					_top = scrollTop + (clientH - height)/2;
+					positionY = _top - 10 < scrollTop ? scrollTop + 10 : _top;
 				}else{
 					positionY = dirY === 'bottom' ? scrollTop + clientH - height - config[dirY] : scrollTop + config[dirY];
 				}
 
 				if(dirX === 'center'){
-					positionX = scrollLeft + (clientW - width)/2;
+					_left = scrollLeft + (clientW - width)/2;
+					positionX = _left - 10 < scrollLeft ? scrollLeft + 10 : _left;
 				}else{
 					positionX = dirX === 'right' ? scrollLeft + clientW - width - config[dirX] : scrollLeft + config[dirX];
 				}
@@ -556,15 +573,105 @@
 				wrap.css('top',positionY + 'px').css('left',positionX + 'px');
 			}
 
+			this._oldW = width;
+			this._oldH = height;
 
 		},
 		getButton : function(mark){
-			var btns = this.dom.wrap.find('.mgDialog_footer .mgDialog_button');
+			var btns = this.dom.wrap.find('.mgDialog_footer [data-role^=btn]');
 			if(typeof mark === 'number'){
 				return btns.eq(mark)
 			}else if(typeof mark === 'string'){
 				return btns.filter('[data-id='+mark+']');
+			}else if(mark === undefined){
+				return btns
 			}
+		},
+		reset : function(){
+			this.setPosition()
+		},
+		//参数 origin[数字0-12]：定位源，代表时钟方向，0为中心；gap[数字]：定位时与屏幕四边的最小距离（定位源为center时有效）
+		position : function(origin,gap){
+			var config = this.config;
+			var that = this;
+			var wrap = this.dom.wrap,
+				width = wrap.outerWidth(),  //当前宽度
+				height = wrap.outerHeight(), //当前高度
+				clientW = document.documentElement.clientWidth, //可视区域宽度
+				clientH = document.documentElement.clientHeight, //可视区域高度
+				scrollTop = config.fixed ? 0 : document.body.scrollTop || document.documentElement.scrollTop, //滚动高度 如果fixed定位 记为0
+				scrollLeft = config.fixed ? 0 : document.body.scrollLeft || document.documentElement.scrollLeft, //滚动左侧 如果fixed定位 记为0
+				top = isNaN(parseInt(wrap.css('top'))) ? clientH - parseInt(wrap.css('bottom')) - that._oldH : parseInt(wrap.css('top')), //当前top值
+				left = isNaN(parseInt(wrap.css('left'))) ? clientW - parseInt(wrap.css('right')) - that._oldW : parseInt(wrap.css('left')); //当前left值
+
+			gap = isNaN(parseInt(gap)) ? _baseGap : parseInt(gap); //定位时与屏幕四边的最小距离
+
+			var _top,_left,resTop,resLeft;//y方向定位差，x方向定位差，结果top值，结果left值
+
+			//获取定位源，默认center
+			origin = typeof origin === 'number' && origin >=0  && origin <13 ? Math.floor(origin) : 0;
+			var aOriMap = ['center','top','right','bottom','left'],
+				aOrigin = [[0,0],[2,1],[2,1],[2,0],[2,3],[2,3],[0,3],[4,3],[4,3],[4,0],[4,1],[4,1],[0,1]],
+				oriX = aOriMap[aOrigin[origin][0]],
+				oriY = aOriMap[aOrigin[origin][1]];
+
+			//y方向
+			if(oriY === 'center'){
+
+				//定位差
+				_top = top - (height - this._oldH)/2;
+
+				//对话框顶部超出可视区域时，top取最小距离
+				if(_top - gap < scrollTop){
+					resTop = scrollTop + gap;
+
+				//对话框底部超出可视区域时，top取最大距离
+				}else if(_top + gap + height - scrollTop > clientH){
+					resTop = scrollTop + clientH - height - gap;
+
+				//两头都在可视区域nei，top直接取差值
+				}else{
+
+					resTop = _top;
+				}
+
+			}else if(oriY === 'top'){
+
+				if(config.fixed){
+					resTop = top;
+				}
+
+			}else if(oriY === 'bottom'){
+				resTop = top - (height - this._oldH);
+			}
+
+			//x方向逻辑同y方向
+			if(oriX === 'center'){
+				_left = left - (width - this._oldW)/2;
+
+				if(_left - gap < scrollLeft){
+					resLeft = scrollLeft + gap;
+				}else if(_left + gap + width - scrollLeft > clientW){
+					resLeft = scrollLeft + clientW - width - gap;
+
+				}else{
+					resLeft = _left;
+				}
+
+			}else if(oriX === 'left'){
+				if(config.fixed){
+					resLeft = left;
+				}
+
+			}else if(oriX === 'right'){
+				resLeft = left - (width - this._oldW);
+			}
+
+			wrap.css({'top':resTop + 'px','left':resLeft + 'px'});
+			$document.off('mousemove',rePosition);
+
+			this._oldW = width;
+			this._oldH = height;
 		},
 		destroy : function(){
 			removeDialog(this._id);
@@ -610,7 +717,29 @@
 
 			this.destroy = function(){};
 
+		},
+		width : function(num){
+			this.dom.wrap.width(num);
+			return this;
+		},
+		height : function(num){
+			this.dom.wrap.height(num);
+			return this;
+
+		},
+		title : function(tit){
+			var title = this.dom.wrap.find('[data-role=title]');
+			typeof tit === 'string' ? title.html(tit) : title.empty().append(tit);
+			return this;
+
+		},
+		content : function(cont){
+			var content = this.dom.wrap.find('[data-role=content]');
+			typeof cont === 'string' ? content.html(cont) : content.empty().append(cont);
+			return this;
+
 		}
+
 
 	};
 
@@ -709,4 +838,4 @@
 		return new Dialog(cfg,this);
 	};
 
-})(window,jQuery);
+})(window,jQuery,document);
