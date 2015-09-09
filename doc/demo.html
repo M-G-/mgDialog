@@ -16,6 +16,86 @@
 	</style>
 </head>
 <body>
+<div class="box">
+	<h2></h2>
+	<button class="btn" id="_d1">自动中心定位测试</button>
+
+	<script>
+		var _w = 480;
+		var _h = 200;
+		var _d1 = $.dialog({
+			content : '<input type ="text"><select></select ><textarea></textarea>',
+//			drag : false,
+			width: 480,
+//			height : 200,
+			buttons : [
+				{call:'moreH',text:'高+'},
+				{call:'lessH',text:'高-'},
+				{call:'moreW',text:'宽+'},
+				{call:'lessW',text:'宽-'},
+				{call:'moreAll',text:'all-'},
+				{call:'lessAll',text:'all-'},
+				{call:'max',text:'max'},
+				{call:'min',text:'min'},
+				{call:'add',text:'addText'},
+				{call:'remove',text:'removeText'},
+			],
+			onMoreH : function(){
+				_h += 200; this.height(_h);
+				var footer = this.dom.wrap.find('.mgDialog_footer');
+				var h = footer.outerHeight() + parseInt(footer.css('margin-top')) + parseInt(footer.css('margin-bottom')) + parseInt(footer.css('border-top-width')) + parseInt(footer.css('border-bottom-width'));
+
+				console.log(h);
+			},
+			onLessH : function(){
+				_h -= 200; if(_h < 200) _h = 200; this.height(_h);
+			},
+			onMoreW : function(){
+				_w += 200; this.width(_w);
+			},
+			onLessW : function(){
+				_w -= 200; if(_w < 480) _h = 480; this.width(_w);
+			},
+			onMoreAll : function(){
+				_h += 200; this.height(_h);
+				_w += 200; this.width(_w);
+			},
+			onLessAll : function(){
+				_h -= 200; if(_h < 200) _h = 200; this.height(_h);
+				_w -= 200; if(_w < 480) _h = 480; this.width(_w);
+			},
+			onMin : function(){
+				_h = 200;
+				_w = 480;
+				this.height(_h).width(_w);
+			},
+			onMax : function(){
+				_h = 2000;
+				_w = 2000;
+				this.height(_h,false).width(_w);
+			},
+//			fixed : true,
+			onAdd : function(){
+				this.dom.wrap.find('.mgDialog_content').append($('<p class="p" dragbar>占位'+Date.now()+'</p>'));
+				this.position();
+//				this.width(2000,false).height(1800).position();
+			},
+			onRemove : function(){
+				this.dom.wrap.find('.p').eq(0).remove();
+				this.position();
+			}
+//			content : '<input id="i1" type="text" />'
+		});
+		$('#_d1').on('click',function(){
+			_d1.open();
+//			$('#i1')[0].focus()
+		});
+
+	</script>
+	<br/>
+</div>
+
+<hr/>
 <h1>1.基础</h1>
 
 <div class="box">
@@ -81,10 +161,10 @@
 			bottom : 10,
 			right : 10,
 			onWidth : function(){
-				this.width(200).height(200).position()
+				this.width(200,false).height(200,4)
 			},
 			onHeight : function(){
-				this.width(500).height(500).position()
+				this.width(500,false).height(500,4)
 			},
 			onTitle : function(){
 				this.title('我的标题！')
@@ -406,7 +486,7 @@
 
 	<h2>2.3自定义dom</h2>
 	<button class="btn" id="d6_1">自定义dom</button>
-	<div id="d6_1_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
+	<div id="d6_1_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;" dragbar>
 		$('#XXX').dialog() ，创建一个自定义dom的对话框。<br>
 		由于完全自定义dom结构，定义对话框结构和内容的属性失效。<br>
 		如content,title,buttons,titleAlign等<br>
@@ -414,7 +494,7 @@
 	</div>
 
 	<button class="btn" id="d6_2">定义按钮和倒计时数字</button>
-	<div id="d6_2_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
+	<div id="d6_2_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;" dragbar>
 		给任意元素添加属性：data-role="cd"，把此元素定义为倒计时数字<br>
 		如：&lt;span data-role="cd"&gt;&lt;/span&gt;<br>
 		<span data-role="cd"></span>秒之后关闭对话框<br><br>
@@ -427,17 +507,17 @@
 	<iframe id="d6_3_dom" style=" background: #fff;" src="https://m.taobao.com/" frameborder="0" width="320" height="500"></iframe>
 
 	<button class="btn" id="d6_4">使用自带样式</button>
-	<div class="mgDialog" id="d6_4_dom">
-		<div class="mgDialog_header">
-			<div class="mgDialog_title">使用自带样式</div>
-			<i class="mgDialog_cross" data-role="btn:cancel,close">×</i>
+	<div class="mgDialog" id="d6_4_dom" dragbar>
+		<div class="mgDialog_header" dragbar>
+			<div class="mgDialog_title" dragbar>使用自带样式</div>
+			<i class="mgDialog_cross" data-role="btn:cancel,close" dragbar>×</i>
 		</div>
 		<div class="mgDialog_content">
 			如果需要使用自带的样式<br>请参考此对话框的结构、class、data-role
 		</div>
-		<div class="mgDialog_footer">
-			<button class="mgDialog_button disabled" data-role="btn:cancel,close">取消</button>
-			<button class="mgDialog_button mgDialog_button_confirm" data-role="btn:confirm,close">确定</button>
+		<div class="mgDialog_footer" dragbar>
+			<button class="mgDialog_button disabled" data-role="btn:cancel,close" dragbar>取消</button>
+			<button class="mgDialog_button mgDialog_button_confirm" data-role="btn:confirm,close" dragbar>确定</button>
 		</div>
 	</div>
 
@@ -480,7 +560,7 @@
 			content : '最多产生一个遮罩层，并且最后一个窗口关闭后才会删除遮罩层',
 			width:300,
 			height : 300,
-			top : 0,
+			top : 20,
 			left : 320
 		});
 		var d7_2 = $.dialog({
@@ -497,16 +577,20 @@
 			width:300,
 			height : 300,
 			top : 220,
-			left : 520
+			left : 520,
+			onCancel : function(){
+				d7_1.width(200)
+				return false
+			}
 		})
 		$('#d7_1').on('click',function(){
 			d7_1.open();
 			setTimeout(function(){
 				d7_2.open()
-			},100);
+			},200);
 			setTimeout(function(){
 				d7_3.open()
-			},200);
+			},400);
 
 		})
 	</script>

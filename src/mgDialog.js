@@ -22,18 +22,27 @@
 * getButton(index,id)
 *
 * 期望：
-* title(str|jqObj) [√]
-* content(str|jqObj) [√]
+* title(str|jqObj,position) [√]
+* content(str|jqObj,position) [√]
+* width(num,position) [√]
+* height(num,position) [√]
 * buttons(str|jqObj) [√]
-* focus()
-* blur()
-* width(num) [√]
-* height(num) [√]
-* reset()
+* focus() ?
+* blur() ?
+* reset()!
 * position() [√]
-* autoFocus
+* autoFocus [√]
 * 链式调用 [√]
-* window.onresize
+* window.onresize !
+*
+* bugs:
+* 表单元素无法输入 [√]
+* 输入时按回车键不符合预期 [√]
+* 自定义margin 必须为0
+* border引起的偏差
+* 按钮放在底部 [√]
+* drag对话框不能选中文字 [√]
+* position() x方向的逻辑还没有跟新
 *
 * */
 (function(window,$,document){
@@ -53,7 +62,7 @@
 
 	var _baseZ = 1000; //z-index基准
 	var _baseGap = 10; //默认间隙
-	//var btnReg = /^btn:/;
+	var _dargMark = 'dragbar';
 	var cdReg = /{%cd}/gi;
 
 	var $mask = $('<div class="mgDialog_mask" style="z-index:'+_baseZ+'"></div>'),
@@ -63,12 +72,13 @@
 		$header = $('<div class="mgDialog_header"></div>'),
 		$content = $('<div data-role="content" class="mgDialog_content"></div>'),
 		$btn = $('<button class="mgDialog_button"></button>'),
-		$footer = $('<div data-role="footer" class="mgDialog_footer">'),
+		$footer = $('<div class="mgDialog_footer">'),
 		/*
 		* 初始化时，复制$hk插入wrap内，open时获得焦点，
 		* 目的是让其他表单元素失去焦点，使按回车时不触发表单元素上的click事件，排除dialog上回车键绑定事件的干扰
 		* */
 		$hk = $('<input type="text" class="mgDialog_hk">'),
+		$gap = $('<i class="mgDialog_gap"></i>'),
 		$document = $(document);
 
 	var stCD = '<span data-role="cd"></span>';	
@@ -105,41 +115,36 @@
 		_dialogs[dialog._id] = dialog;
 	}
 
-	function focusDialog(id){
-		id ? focusCurrent(id) : focusLast();
-	}
-
-	//根据id使对话框获得焦点
-	function focusCurrent(id){
-		//if(_focus === id) return;
-
+	//根据id使对话框获得焦点(如果noFocus=true，则只移动到最高层，并不获得焦点)
+	function focusDialog(id,noFocus){
 		var max = -1000;
 		var current = _dialogs[id];
 		var other;
 
 		if(_opened <= 1){
-			current._zIndex = _baseZ + 1
+			current._zIndex = _baseZ + 1;
 		}else{
 			for(name in _dialogs){
 				other = _dialogs[name];
 
 				if(other._bOpen){
 					max = other._zIndex > max ? other._zIndex : max;
-					other.dom.wrap.removeClass('mgDialog_focus');
+					!noFocus && other.dom.wrap.removeClass('mgDialog_focus');
 				}
 
 			}
 
 			current._zIndex = max + 1;
 		}
-		//setTimeout(function(){
+		if(!noFocus){
 			_focus = id;
-			current.dom.wrap.addClass('mgDialog_focus').css('z-index',current._zIndex)
-		//},50)
+			current.dom.wrap.addClass('mgDialog_focus');
+		}
+		current.dom.wrap.css('z-index',current._zIndex);
 
 	}
 
-	//最高层对话框（_zIndex最大）获得焦点
+	//最高层对话框（_zIndex最大,且忽略autoFocus=false）获得焦点
 	function focusLast(){
 		if(_opened === 0) return;
 
@@ -149,7 +154,7 @@
 		for(name in _dialogs){
 			current = _dialogs[name];
 			if(current._bOpen){
-				if(current._zIndex > max){
+				if(current._zIndex > max && current.config.autoFocus){
 					max = current._zIndex;
 					id = current._id;
 				}
@@ -157,30 +162,32 @@
 			}
 		}
 
-		setTimeout(function(){
-			_focus = id;
-			_dialogs[id].dom.wrap.addClass('mgDialog_focus');
-		},50)
+		_focus = id;
+		_dialogs[id] && _dialogs[id].dom.wrap.addClass('mgDialog_focus');
 
 	}
 
 	//拖拽
-	function drag(obj,id){
-		obj.on('mousedown',{id:id,obj:obj},downFn);
+	function drag(dialog){
+		dialog.dom.wrap.on('mousedown',{dialog:dialog},downFn);
 	}
 
 	function downFn(e){
-		var id = e.data.id;
-		var item = e.data.obj[0];
-		focusDialog(id);
+		var oEvent = e.originalEvent,
+			src = $(oEvent.srcElement);
 
-		var oEvent = e.originalEvent;
-		var disY = oEvent.clientY-item.offsetTop;
-		var disX = oEvent.clientX-item.offsetLeft;
-		$document.on('mousemove',{disY:disY,disX:disX,item:item},moveFn).on('mouseup',{item:item},upFn);
-		$document.one('mousemove',{item:item},rePosition)
+		if((src.data('role') === 'content' || src.parents('[data-role=content]').length > 0) && (src.attr(_dargMark) === undefined)) return;
 
-		item.setCapture && item.setCapture();
+		var dialog = e.data.dialog;
+		var wrap = dialog.dom.wrap[0];
+		var disY = oEvent.clientY-wrap.offsetTop;
+		var disX = oEvent.clientX-wrap.offsetLeft;
+
+		focusDialog(dialog._id);
+		$document.on('mousemove',{disY:disY,disX:disX,dialog:dialog},moveFn).on('mouseup',{wrap:wrap},upFn);
+		$document.one('mousemove',{wrap:wrap},rePosition);
+
+		wrap.setCapture && wrap.setCapture();
 
 		return false;
 	}
@@ -189,25 +196,33 @@
 		var oEvent =  e.originalEvent;
 		var disY = e.data.disY;
 		var disX = e.data.disX;
-		var item = e.data.item;
+		var dialog = e.data.dialog;
+		var wrap = dialog.dom.wrap[0];
 
-		var t=oEvent.clientY - disY;
-		var l=oEvent.clientX - disX;
-		item.style.top = t +'px';
-		item.style.left = l +'px';
+		var t = oEvent.clientY - disY;
+		var l = oEvent.clientX - disX;
+
+		if(!dialog.config.fixed){
+			var gap = dialog.config.gap;
+			if(t < gap) t = gap;
+			if(l < gap) l = gap;
+		}
+
+		wrap.style.top = t +'px';
+		wrap.style.left = l +'px';
 	}
 
 	function upFn(e){
-		var item = e.data.item;
+		var wrap = e.data.wrap;
 		$document.off('mousemove',moveFn).off('mouseup',upFn);
 
-		item.releaseCapture && item.releaseCapture();
+		wrap.releaseCapture && wrap.releaseCapture();
 	}
 
 	function rePosition(e){
-		var item = e.data.item;
-		item.style.bottom = 'auto';
-		item.style.right = 'auto';
+		var wrap = e.data.wrap;
+		wrap.style.bottom = 'auto';
+		wrap.style.right = 'auto';
 	}
 
 	function getHtml(text){
@@ -222,6 +237,8 @@
 			height : 0,
 			countdown : 0,	//等待若干秒之后自动关闭对话框，0:不自动关闭对话框
 			autoDestroy : false, //当close触发时候 是否调用this.destroy()
+			autoFocus : true,
+			gap : _baseGap,
 			//resetButtons : true, //预留 open()时重置按钮
 			enterCall : 'confirm,close', //当hotkeys为true时 按回车键执行...
 			escCall : 'cancel,close', //当hotkeys为true时 按退出键执行...
@@ -250,6 +267,9 @@
 		this.dom = {
 			wrap : userWrap,
 			hk : $hk.clone(),
+			gap : $gap.clone(),
+			footer : null,
+			footHolder : null,
 			buttons : null //暂时无用
 		};
 
@@ -273,9 +293,12 @@
 			var kc = e.originalEvent.keyCode;
 			var that = e.data.that;
 
+			var nodeName = document.activeElement.nodeName;
+
 			if(_focus === that._id){
-				if(kc === 13){
+				if(kc === 13 && (nodeName !== 'INPUT' && nodeName !== 'TEXTAREA' || $(document.activeElement).hasClass('mgDialog_hk'))){
 					that.doFns(that.config.enterCall);
+
 				}else if(kc ===27){
 					that.doFns(that.config.escCall);
 				}
@@ -292,7 +315,8 @@
 			var dom = this.dom;
 			var config = this.config;
 
-			dom.wrap = dom.wrap ? dom.wrap.append(this.dom.hk) : this.createWrap();
+			dom.wrap = dom.wrap ? dom.wrap.append(this.dom.hk).append(this.dom.gap) : this.createWrap();
+			//dom.wrap = dom.wrap ? dom.wrap.append(this.dom.gap) : this.createWrap();
 
 			!!config.width && dom.wrap.css('width',config.width);
 			!!config.height && dom.wrap.css('height',config.height);
@@ -314,8 +338,8 @@
 				}
 			}
 
-			config.drag && drag(dom.wrap,this._id)
-
+			config.drag && drag(this);
+			this.setGap();
 
 
 		},
@@ -363,12 +387,14 @@
 			}
 
 			//创建内容
-			wrap.append($content.clone().css('text-align',config.contentAlign).html(getHtml.call(this,config.content))).append(this.dom.hk);
+			this.dom.content = $content.clone();
+			wrap.append(this.dom.content.css('text-align',config.contentAlign).html(getHtml.call(this,config.content))).append(this.dom.hk).append(this.dom.gap);
+			//wrap.append(this.dom.content.css('text-align',config.contentAlign).html(getHtml.call(this,config.content))).append(this.dom.gap);
 
 			//创建按钮
 			if($.isArray(config.buttons) && config.buttons.length > 0){
-				var footer = $footer.clone().addClass('mgDialog_align_' + config.buttonsAlign).css('text-align',config.buttonsAlign);
-				wrap.append(footer.append(this.cerateButtons(this.config.buttons)));
+				this.dom.footer = $footer.clone().addClass('mgDialog_align_' + config.buttonsAlign + ' mgDialog_footer_fixed').css('text-align',config.buttonsAlign);
+				wrap.append(this.dom.footer.append(this.cerateButtons(this.config.buttons)));
 			}
 
 			return wrap;
@@ -408,20 +434,47 @@
 
 
 		},
+		setGap : function(){
+			var gap = this.config.gap,
+				wrap = this.dom.wrap;
+
+			this.dom.gap.css({
+				right : - parseInt(wrap.css('border-right-width') || 0) - gap,
+				width : gap,
+				bottom : - parseInt(wrap.css('border-bottom-width') || 0) - gap,
+				height : gap
+			});
+		},
+		setFooterHolder : function(){
+			if(this._bUserWrap) return;
+
+			var footer = this.dom.footer;
+			if(footer){
+				var h = footer.outerHeight() + 15;
+				this.dom.content.css('margin-bottom',h);
+			}
+
+		},
 		open : function(b){
 
 			if(this._bOpen === true || this.test(b,this.config.onOpen) === false) return this;
 
+
 			_opened ++;
 
-			focusDialog(this._id);
+			focusDialog(this._id,!this.config.autoFocus);
 
 			this._bOpen = true;
 			var that = this;
 			var $body = $('body');
 			var wrap = this.dom.wrap;
+			var config = this.config;
 
-			if(this.config.hasMask){
+
+
+
+
+			if(config.hasMask){
 				if(_hasMask === 0){
 					$mask.addClass('mgDialog_show').appendTo($body.addClass('mgDialog_show'));
 				}
@@ -429,10 +482,11 @@
 
 			}
 
-			//this.centerOffset();
+			wrap.addClass('mgDialog_show');
+
+
 			this.setPosition();
 
-			wrap.addClass('mgDialog_show');
 			this.dom.hk[0].focus();
 
 			if(this._bCD){
@@ -457,6 +511,10 @@
 			}
 
 			this.config.hotKeys && $(document).on('keyup',{that:this},this._hotkey);
+
+
+
+			//
 
 			return this;
 		},
@@ -496,7 +554,7 @@
 					}
 				}
 
-				focusDialog();
+				focusLast();
 
 				that.config.autoDestroy && that.destroy();
 			}
@@ -514,6 +572,8 @@
 
 		},
 		setPosition : function(){
+			this.setFooterHolder();
+
 			var wrap = this.dom.wrap,
 				config = this.config,
 				clientW = document.documentElement.clientWidth,
@@ -592,11 +652,17 @@
 		},
 		//参数 origin[数字0-12]：定位源，代表时钟方向，0为中心；gap[数字]：定位时与屏幕四边的最小距离（定位源为center时有效）
 		position : function(origin,gap){
-			var config = this.config;
-			var that = this;
+			this.setFooterHolder();
+
 			var wrap = this.dom.wrap,
 				width = wrap.outerWidth(),  //当前宽度
-				height = wrap.outerHeight(), //当前高度
+				height = wrap.outerHeight(); //当前高度
+
+			//宽和高都没有变化时return
+			if(width === this._oldW && height === this._oldH) return;
+
+			var	config = this.config,
+				that = this,
 				clientW = document.documentElement.clientWidth, //可视区域宽度
 				clientH = document.documentElement.clientHeight, //可视区域高度
 				scrollTop = config.fixed ? 0 : document.body.scrollTop || document.documentElement.scrollTop, //滚动高度 如果fixed定位 记为0
@@ -618,21 +684,31 @@
 			//y方向
 			if(oriY === 'center'){
 
-				//定位差
-				_top = top - (height - this._oldH)/2;
+				//对话框高度+间隙 小于 屏幕高度的时候，中心定位
+				if(height + gap*2 < clientH){
 
-				//对话框顶部超出可视区域时，top取最小距离
-				if(_top - gap < scrollTop){
-					resTop = scrollTop + gap;
+					//定位差
+					_top = top - (height - this._oldH)/2;
 
-				//对话框底部超出可视区域时，top取最大距离
-				}else if(_top + gap + height - scrollTop > clientH){
-					resTop = scrollTop + clientH - height - gap;
+					//对话框底部超出可视区域时，top取最大距离
+					if(_top + gap + height - scrollTop > clientH){
+						resTop = scrollTop + clientH - height - gap;
 
-				//两头都在可视区域nei，top直接取差值
+					//对话框顶部超出可视区域时，top取最小距离
+					}else if(_top - gap < scrollTop){
+
+
+						resTop = scrollTop + gap;
+
+					//两头都在可视区域nei，top直接取差值
+					}else{
+
+						resTop = _top;
+					}
+
+				//对话框高度+间隙 大于 屏幕高度的时候，底部位置保持不变
 				}else{
-
-					resTop = _top;
+					resTop = top - (height - this._oldH);
 				}
 
 			}else if(oriY === 'top'){
@@ -667,6 +743,12 @@
 				resLeft = left - (width - this._oldW);
 			}
 
+			//顶部保持不超出一个间隙
+			if(!config.fixed){
+				if(resTop < gap) resTop = gap;
+			}
+
+
 			wrap.css({'top':resTop + 'px','left':resLeft + 'px'});
 			$document.off('mousemove',rePosition);
 
@@ -692,6 +774,7 @@
 
 			if(this._bUserWrap){
 				this.dom.hk.remove();
+				this.dom.gap.remove();
 				this.dom.wrap.css('z-index',this._oldZ)
 			}else{
 				this.dom.wrap.remove();
@@ -715,27 +798,33 @@
 			this._zIndex = null;
 			this._bCD = null;
 
+			$document.off('mousemove',moveFn).off('mouseup',upFn);
+
 			this.destroy = function(){};
 
 		},
-		width : function(num){
+		width : function(num,position){
 			this.dom.wrap.width(num);
+			if(position !== false) this.position(position);
 			return this;
 		},
-		height : function(num){
+		height : function(num,position){
 			this.dom.wrap.height(num);
+			if(position !== false) this.position(position);
 			return this;
 
 		},
-		title : function(tit){
+		title : function(tit,position){
 			var title = this.dom.wrap.find('[data-role=title]');
 			typeof tit === 'string' ? title.html(tit) : title.empty().append(tit);
+			if(position !== false) this.position(position);
 			return this;
 
 		},
-		content : function(cont){
+		content : function(cont,position){
 			var content = this.dom.wrap.find('[data-role=content]');
 			typeof cont === 'string' ? content.html(cont) : content.empty().append(cont);
+			if(position !== false) this.position(position);
 			return this;
 
 		}
@@ -785,6 +874,12 @@
 			}).open()
 		},
 		prompt : function(text,fn,title){
+			function submit(e){
+				if(e.originalEvent.keyCode === 13){
+					d.config.onConfirm()
+
+				}
+			}
 
 			var d = new Dialog({
 				title : title,
@@ -792,20 +887,25 @@
 				width : 270,
 				autoDestroy : true,
 				buttons : [
-
 					{
 						type : 'cancel',
 						call : 'close'
 					},
 					{
-						type : 'confirm'
+						type : 'confirm',
+						call : 'confirm'
 					}
 				],
+				onOpen : function(){
+					$document.on('keyup',submit);
+				},
 				onConfirm : function(){
-					typeof fn === 'function' && fn(input.val())
+					typeof fn === 'function' && fn(input.val());
+					d.close();
 				},
 				onClose : function(){
 					input = null;
+					$document.off('keyup',submit)
 				}
 			});
 
@@ -824,6 +924,7 @@
 				content : text || 'toast',
 				width : width || 160,
 				autoDestroy : true,
+				autoFocus : false,
 				countdown : 3,
 				hasMask : false,
 				hotKeys : false,
