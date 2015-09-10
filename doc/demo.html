@@ -18,13 +18,15 @@
 <body>
 <div class="box">
 	<h2></h2>
-	<button class="btn" id="_d1">自动中心定位测试</button>
+	<button class="btn" id="_d1">扩展定位</button>
+	<button class="btn" id="_d2">表单元素获得焦点，禁用dialog回车</button>
+	<button class="btn" id="_d3">设置button</button>
 
 	<script>
 		var _w = 480;
 		var _h = 200;
 		var _d1 = $.dialog({
-			content : '<input type ="text"><select></select ><textarea></textarea>',
+
 //			drag : false,
 			width: 480,
 //			height : 200,
@@ -38,14 +40,13 @@
 				{call:'max',text:'max'},
 				{call:'min',text:'min'},
 				{call:'add',text:'addText'},
-				{call:'remove',text:'removeText'},
+				{call:'remove',text:'removeText'}
 			],
 			onMoreH : function(){
 				_h += 200; this.height(_h);
 				var footer = this.dom.wrap.find('.mgDialog_footer');
 				var h = footer.outerHeight() + parseInt(footer.css('margin-top')) + parseInt(footer.css('margin-bottom')) + parseInt(footer.css('border-top-width')) + parseInt(footer.css('border-bottom-width'));
 
-				console.log(h);
 			},
 			onLessH : function(){
 				_h -= 200; if(_h < 200) _h = 200; this.height(_h);
@@ -76,19 +77,65 @@
 			},
 //			fixed : true,
 			onAdd : function(){
-				this.dom.wrap.find('.mgDialog_content').append($('<p class="p" dragbar>占位'+Date.now()+'</p>'));
+				this.dom.wrap.find('.mgDialog_content').append($('<p class="p">占位'+Date.now()+'</p>'));
 				this.position();
-//				this.width(2000,false).height(1800).position();
 			},
 			onRemove : function(){
 				this.dom.wrap.find('.p').eq(0).remove();
 				this.position();
 			}
-//			content : '<input id="i1" type="text" />'
 		});
-		$('#_d1').on('click',function(){
+		$('#_d').on('click',function(){
 			_d1.open();
-//			$('#i1')[0].focus()
+		});
+
+		var _d2 = $.dialog({
+			content : '<input type ="text"><br/><br/><textarea></textarea>'
+		});
+		$('#_d2').on('click',function(){
+			_d2.open();
+		});
+
+		var _d3 = $.dialog({
+			content : '设置按钮<br>倒计时{%cd}',
+			countdown : 20,
+			buttons : [
+				{
+					type : 'confirm',
+					call : 'aaa',
+					text : '提交'
+				}
+			],
+			enterCall : '',
+			countdownCall : 'confirm,close',
+			onConfirm : function(){
+				$.toast('成功！')
+			},
+			onAaa : function(){
+				var that = this;
+				this.button(0,{
+					text : '提交中...',
+					disabled : true
+				});
+
+				setTimeout(function(){
+					that.button(0,{
+						text : '完成',
+						disabled : false,
+						call : 'bbb'
+					});
+
+				},3000)
+			},
+			onBbb : function(){
+				this.button(0,{
+					text : '<i data-role="cd"></i>秒之后关闭',
+					disabled : true
+				}).countdown(4,'close')
+			}
+		});
+		$('#_d3').on('click',function(){
+			_d3.open();
 		});
 
 	</script>
@@ -504,7 +551,7 @@
 	</div>
 
 	<button class="btn" id="d6_3">嵌入iframe</button>
-	<iframe id="d6_3_dom" style=" background: #fff;" src="https://m.taobao.com/" frameborder="0" width="320" height="500"></iframe>
+	<iframe id="d6_3_dom" style=" background: #fff;" _src="https://m.taobao.com/" frameborder="0" width="320" height="500"></iframe>
 
 	<button class="btn" id="d6_4">使用自带样式</button>
 	<div class="mgDialog" id="d6_4_dom" dragbar>

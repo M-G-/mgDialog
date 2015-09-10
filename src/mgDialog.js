@@ -26,7 +26,8 @@
 * content(str|jqObj,position) [√]
 * width(num,position) [√]
 * height(num,position) [√]
-* buttons(str|jqObj) [√]
+* button(str|jqObj) ?
+* countdown(num)
 * focus() ?
 * blur() ?
 * reset()!
@@ -34,11 +35,12 @@
 * autoFocus [√]
 * 链式调用 [√]
 * window.onresize !
+* width,height 支持auto ?
 *
 * bugs:
 * 表单元素无法输入 [√]
 * 输入时按回车键不符合预期 [√]
-* 自定义margin 必须为0
+* 自定义margin 必须为0 思路：把_oldZ 改为 _oldStyle
 * border引起的偏差
 * 按钮放在底部 [√]
 * drag对话框不能选中文字 [√]
@@ -178,10 +180,10 @@
 
 		if((src.data('role') === 'content' || src.parents('[data-role=content]').length > 0) && (src.attr(_dargMark) === undefined)) return;
 
-		var dialog = e.data.dialog;
-		var wrap = dialog.dom.wrap[0];
-		var disY = oEvent.clientY-wrap.offsetTop;
-		var disX = oEvent.clientX-wrap.offsetLeft;
+		var dialog = e.data.dialog,
+			wrap = dialog.dom.wrap[0],
+			disY = oEvent.clientY-wrap.offsetTop,
+			disX = oEvent.clientX-wrap.offsetLeft;
 
 		focusDialog(dialog._id);
 		$document.on('mousemove',{disY:disY,disX:disX,dialog:dialog},moveFn).on('mouseup',{wrap:wrap},upFn);
@@ -193,11 +195,11 @@
 	}
 
 	function moveFn(e){
-		var oEvent =  e.originalEvent;
-		var disY = e.data.disY;
-		var disX = e.data.disX;
-		var dialog = e.data.dialog;
-		var wrap = dialog.dom.wrap[0];
+		var oEvent =  e.originalEvent,
+			disY = e.data.disY,
+			disX = e.data.disX,
+			dialog = e.data.dialog,
+			wrap = dialog.dom.wrap[0];
 
 		var t = oEvent.clientY - disY;
 		var l = oEvent.clientX - disX;
@@ -643,8 +645,59 @@
 				return btns.eq(mark)
 			}else if(typeof mark === 'string'){
 				return btns.filter('[data-id='+mark+']');
-			}else if(mark === undefined){
-				return btns
+			}
+		},
+		button : function(mark,opt){
+			//var opt = {
+			//	text : 'aaa',
+			//	call : 'bbb',
+			//	disabled : true
+			//};
+			var btn = this.getButton(mark);
+
+			if(typeof opt.text === 'string'){
+				btn.html(opt.text);
+			}
+
+			if(typeof opt.call === 'string'){
+				btn.data('role','btn:' + opt.call);
+			}
+
+			if(typeof opt.disabled === 'boolean'){
+				opt.disabled ? btn.addClass('disabled') : btn.removeClass('disabled');
+			}
+
+			return this;
+
+		},
+		countdown : function(cd,fb){
+			var that = this;
+			if(typeof cd === 'number' && cd > 0){
+				var cdWrap = this.dom.wrap.find('[data-role=cd]');
+
+				cdWrap.text(cd);
+
+				clearInterval(this.cdTimer);
+				this.cdTimer = setInterval(function(){
+
+					cd --;
+					if(cd > 0){
+						cdWrap.text(cd);
+					}else{
+						cdWrap.text(0);
+						clearInterval(that.cdTimer);
+						if(typeof fb === 'function'){
+							fb()
+						}else if(typeof fb === 'string'){
+							that.doFns(fb)
+						}else{
+							that.doFns(that.config.countdownCall);
+						}
+
+
+					}
+
+				},1000)
 			}
 		},
 		reset : function(){
@@ -696,7 +749,6 @@
 
 					//对话框顶部超出可视区域时，top取最小距离
 					}else if(_top - gap < scrollTop){
-
 
 						resTop = scrollTop + gap;
 
