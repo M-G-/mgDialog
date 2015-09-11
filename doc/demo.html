@@ -16,11 +16,21 @@
 	</style>
 </head>
 <body>
+
+
+
 <div class="box">
 	<h2></h2>
 	<button class="btn" id="_d1">扩展定位</button>
 	<button class="btn" id="_d2">表单元素获得焦点，禁用dialog回车</button>
-	<button class="btn" id="_d3">设置button</button>
+	<button class="btn" id="_d3">提交数据交互</button>
+	<button class="btn" id="_d3_2">提交数据交互2</button>
+
+	<button class="btn" id="_d4">自定义dom,销毁后的还原情况</button>
+	<div id="_d4_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
+		<p>自定义dom,销毁后的还原情况</p>
+		<a style="color:#fff" href="javascript:;" data-role="btn:close">[销毁]</a>
+	</div>
 
 	<script>
 		var _w = 480;
@@ -85,7 +95,7 @@
 				this.position();
 			}
 		});
-		$('#_d').on('click',function(){
+		$('#_d1').on('click',function(){
 			_d1.open();
 		});
 
@@ -97,45 +107,103 @@
 		});
 
 		var _d3 = $.dialog({
-			content : '设置按钮<br>倒计时{%cd}',
-			countdown : 20,
+			content : '功能点：<ul><li>按钮操作:button()</li><li>倒计时:countdown()</li></ul>',
 			buttons : [
 				{
 					type : 'confirm',
-					call : 'aaa',
+					call : 'confirm',
 					text : '提交'
 				}
 			],
-			enterCall : '',
-			countdownCall : 'confirm,close',
-			onConfirm : function(){
-				$.toast('成功！')
+			enterCall : 'confirm',
+			onClose : function(){
+				if(this.posting){
+					$.toast('正在提交中');
+					return false;
+				}
+
+				this.success ? $.toast('成功') : $.toast('取消');
+				return true;
 			},
-			onAaa : function(){
+			onConfirm : function(){
+				if(this.success){
+					this.trigger('close');
+
+				}else{
+					if(_d3.posting) return;
+					var that = this;
+					_d3.posting = true;
+
+					this.button(0,{
+						text : '提交中...',
+						disabled : true
+					});
+
+					setTimeout(function(){
+						that.posting = false;
+						that.success = true;
+						that.button(0,{
+							text : '成功，<span data-role="cd"></span>秒之后关闭'
+						}).countdown(3,'close'); //countdown 参数：倒数时间[number]；回调[string:事件流，function:回调函数，空缺或其他：countdownCall属性定义的事件流]
+
+					},1600)
+				}
+
+			}
+		});
+		_d3.posting = false;
+		_d3.success = false;
+		$('#_d3').on('click',function(){
+			_d3.open();
+		});
+
+		var _d3_2 = $.dialog({
+			content : '简易版</li></ul>',
+			buttons : [
+				{
+					type : 'confirm',
+					call : 'confirm',
+					text : '提交'
+				}
+			],
+			hotKeys : false,
+			onClose : function(){
+				return !this.posting;
+			},
+			onConfirm : function(){
+
+				if(this.posting) return;
+
 				var that = this;
+				this.posting = true;
+
 				this.button(0,{
 					text : '提交中...',
+					type : 'cancel',
 					disabled : true
 				});
 
 				setTimeout(function(){
+					that.posting = false;
+
 					that.button(0,{
-						text : '完成',
+						text : '关闭',
 						disabled : false,
-						call : 'bbb'
+						call : 'close'
 					});
 
-				},3000)
-			},
-			onBbb : function(){
-				this.button(0,{
-					text : '<i data-role="cd"></i>秒之后关闭',
-					disabled : true
-				}).countdown(4,'close')
+					that.content('提交成功！')
+
+				},4000)
+
 			}
 		});
-		$('#_d3').on('click',function(){
-			_d3.open();
+		$('#_d3_2').on('click',function(){
+			_d3_2.open();
+		});
+
+		$('#_d4').on('click',function(){
+			$('#_d4_dom').dialog({autoDestroy:true}).open();
 		});
 
 	</script>
@@ -183,7 +251,7 @@
 		});
 		$('#d2_1').on('click',function(){
 			d2_1.open()
-		})
+		});
 
 		var d2_2 = $.dialog({
 			content : '把fixed置为true,开启fixed定位',
@@ -464,7 +532,11 @@
 			onCancel : function(){$.toast('取消:cancel')},
 			onConfirm : function(){$.toast('确认:confirm')},
 			onEnable : function(){
-				d4_7.getButton('b1').removeClass('disabled').text('取消')
+				this.button(0,{
+					disabled : false,
+					text : '取消'
+				});
+//				d4_7.getButton('b1').removeClass('disabled').text('取消')
 			}
 
 		});
@@ -533,15 +605,21 @@
 
 	<h2>2.3自定义dom</h2>
 	<button class="btn" id="d6_1">自定义dom</button>
-	<div id="d6_1_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;" dragbar>
+	<div id="d6_1_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
 		$('#XXX').dialog() ，创建一个自定义dom的对话框。<br>
 		由于完全自定义dom结构，定义对话框结构和内容的属性失效。<br>
 		如content,title,buttons,titleAlign等<br>
+		<div style="color: red;" data-role="content">
+			<p>注意:</p>
+			<p>如果开启了拖拽效果，选中文字的功能失效，这两个功能是互斥的。</p>
+			<p>如果希望用户复制，请把内容包裹在有data-role="content"的属性的元素里，像这段文字一样。</p>
+			<p>如果希望在可复制内容里添加一个 <span dragbar style="cursor: move;">[拖拽手柄]</span>，请给此元素添加dragbar属性</p>
+		</div>
 		<a style="color:#ddd" href="javascript:;" onclick="d6_1.close()">[关闭]</a>
 	</div>
 
 	<button class="btn" id="d6_2">定义按钮和倒计时数字</button>
-	<div id="d6_2_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;" dragbar>
+	<div id="d6_2_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
 		给任意元素添加属性：data-role="cd"，把此元素定义为倒计时数字<br>
 		如：&lt;span data-role="cd"&gt;&lt;/span&gt;<br>
 		<span data-role="cd"></span>秒之后关闭对话框<br><br>
@@ -554,17 +632,17 @@
 	<iframe id="d6_3_dom" style=" background: #fff;" _src="https://m.taobao.com/" frameborder="0" width="320" height="500"></iframe>
 
 	<button class="btn" id="d6_4">使用自带样式</button>
-	<div class="mgDialog" id="d6_4_dom" dragbar>
-		<div class="mgDialog_header" dragbar>
-			<div class="mgDialog_title" dragbar>使用自带样式</div>
-			<i class="mgDialog_cross" data-role="btn:cancel,close" dragbar>×</i>
+	<div class="mgDialog" id="d6_4_dom">
+		<div class="mgDialog_header">
+			<div class="mgDialog_title">使用自带样式</div>
+			<i class="mgDialog_cross" data-role="btn:cancel,close">×</i>
 		</div>
 		<div class="mgDialog_content">
 			如果需要使用自带的样式<br>请参考此对话框的结构、class、data-role
 		</div>
-		<div class="mgDialog_footer" dragbar>
-			<button class="mgDialog_button disabled" data-role="btn:cancel,close" dragbar>取消</button>
-			<button class="mgDialog_button mgDialog_button_confirm" data-role="btn:confirm,close" dragbar>确定</button>
+		<div class="mgDialog_footer">
+			<button class="mgDialog_button disabled" data-role="btn:cancel,close">取消</button>
+			<button class="mgDialog_button mgDialog_button_confirm" data-role="btn:confirm,close">确定</button>
 		</div>
 	</div>
 

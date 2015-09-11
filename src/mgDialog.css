@@ -1,19 +1,26 @@
 @charset "utf-8";
 /*mgDialog v0.1*/
 
-/*遮罩特效*/
-body.mgDialog_show > *:not(.mgDialog):not(.mgDialog_mask){ -webkit-filter:blur(2px) grayscale(1);}
-
 /*容器*/
 .mgDialog{ display: none; color: #333; width: 380px; font-family: STXihei, "microsoft yahei", Arial; background: #fff; border: 1px solid #bbb; border-radius: 5px; position: absolute;  font-size: 14px; _word-break:break-all;}
-.mgDialog.mgDialog_show{ -webkit-animation: mgDialog_open .3s; -moz-animation: mgDialog_open .3s; -ms-animation: mgDialog_open .3s; display: block;}
-.mgDialog.mgDialog_show.mgDialog_aniBack{ -webkit-animation: mgDialog_close .3s;  -moz-animation: mgDialog_close .3s;  -ms-animation: mgDialog_close .3s;}
-.mgDialog.mgDialog_show.mgDialog_focus{ box-shadow: 0 0 14px rgba(0,0,0,.2); border-color:#999;}
+.mgDialogU{ display: none; position: absolute; margin: 0 !important;}
+
+.mgDialog.mgDialog_show,
+.mgDialogU.mgDialog_show{ -webkit-animation: mgDialog_open .3s; -moz-animation: mgDialog_open .3s; -ms-animation: mgDialog_open .3s; display: block;}
+
+.mgDialog.mgDialog_aniBack,
+.mgDialogU.mgDialog_aniBack{ -webkit-animation: mgDialog_close .3s;  -moz-animation: mgDialog_close .3s;  -ms-animation: mgDialog_close .3s;}
+
+.mgDialog.mgDialog_focus,
+.mgDialogU.mgDialog_focus{ box-shadow: 0 0 14px rgba(0,0,0,.2); border-color:#999;}
+
 .mgDialog_gap{position: absolute;}
+.mgDialog_hk{ width: 0; height: 0; position: fixed; top: -100px; left: -100px; border: 0; line-height: 0; padding: 0; margin: 0;}
+.mgDialog_hk:focus{ outline: 0;}
 
 /*遮罩*/
 .mgDialog_mask{ position: fixed; top: 0; left: 0; width: 0; height: 0; background: #000; z-index: 1000;}
-.mgDialog_mask.mgDialog_show{ width: 100%; height: 100%;  opacity: .2; filter:alpha(opacity=20)}
+.mgDialog_mask.mgDialog_show{ width: 100%; height: 100%;  opacity: .3; filter:alpha(opacity=20);}
 
 /*头部*/
 .mgDialog_header{ border-bottom: 1px solid #e3e3e3;  padding: 10px 15px; border-radius: 5px 5px 0 0; background: #f8f8f8; position: relative;}
@@ -41,14 +48,11 @@ body.mgDialog_show > *:not(.mgDialog):not(.mgDialog_mask){ -webkit-filter:blur(2
 .mgDialog_button.disabled{ opacity: .4; filter:alpha(opacity=40); cursor: default;}
 .mgDialog_button.disabled:hover{ opacity: .4; filter:alpha(opacity=40);}
 .mgDialog_button.disabled:focus{ opacity: .4; filter:alpha(opacity=40); box-shadow: none;}
+.mgDialog_button.mgDialog_hidden{ display: none;}
 
 /*自带方法prompt*/
 .mgDialog_promptInput{ width: 100%; box-sizing: border-box; height: 28px; line-height: 28px; padding: 0 3px; margin-top: 10px; border:1px solid #ddd;}
 .mgDialog_promptInput:focus{ outline: 0; border-color: #6fc1e3;}
-
-/*焦点*/
-.mgDialog_hk{ width: 0; height: 0; position: fixed; top: -100px; left: -100px; border: 0; line-height: 0; padding: 0; margin: 0;}
-.mgDialog_hk:focus{ outline: 0;}
 
 /*打开对话框动画*/
 @-webkit-keyframes mgDialog_open {

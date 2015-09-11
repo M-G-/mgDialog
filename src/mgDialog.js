@@ -19,32 +19,47 @@
 * open(b)
 * close(b)
 * destroy()
-* getButton(index,id)
+* trigger()
 *
-* 期望：
+* 搞定：
 * title(str|jqObj,position) [√]
 * content(str|jqObj,position) [√]
 * width(num,position) [√]
 * height(num,position) [√]
-* button(str|jqObj) ?
-* countdown(num)
-* focus() ?
-* blur() ?
-* reset()!
+* button(str|jqObj) [√]
+* countdown(num) [√]
 * position() [√]
 * autoFocus [√]
 * 链式调用 [√]
-* window.onresize !
-* width,height 支持auto ?
-*
-* bugs:
 * 表单元素无法输入 [√]
 * 输入时按回车键不符合预期 [√]
-* 自定义margin 必须为0 思路：把_oldZ 改为 _oldStyle
-* border引起的偏差
+* 自定义margin 必须为0 思路：把_oldZ 改为 _oldStyle [√]
 * 按钮放在底部 [√]
-* drag对话框不能选中文字 [√]
+* drag对话框选中文字 [√]
+* 遮罩特效使对话框z-index失效，故去掉 [√]
+* destroy()之后，自定义dom对话框完全还原 [√]
+*
+*
+* 期望:
+* button:添加hidden属性，去掉id属性，把button添加到dom.button，删除getButton() [√]
+* 自定义dom和自带dom的外层class分开，防止样式干扰 [√]
 * position() x方向的逻辑还没有跟新
+* window.onresize
+* 关闭mask后 窗口scroll值还原
+* reset()
+*
+* 放到最大 再缩小的时候 position()没有居中 ？
+* focus() ?
+* blur() ?
+* width,height 支持auto ?
+* mask添加动画 ?
+*
+*
+* 二次封装，综合应用：
+* 视频滚屏弹出效果
+* 中奖弹出效果
+* 图片预览效果
+* 大尺寸图片效果
 *
 * */
 (function(window,$,document){
@@ -177,7 +192,6 @@
 	function downFn(e){
 		var oEvent = e.originalEvent,
 			src = $(oEvent.srcElement);
-
 		if((src.data('role') === 'content' || src.parents('[data-role=content]').length > 0) && (src.attr(_dargMark) === undefined)) return;
 
 		var dialog = e.data.dialog,
@@ -256,8 +270,8 @@
 			//		type : 'confirm',
 			//		call : 'confirm,close',
 			//		text : '确定',
-			//		id : 'xxx',
-			//		disabled : false
+			//		disabled : false,
+			//		hidden : false
 			//	}
 			//]
 		};
@@ -279,75 +293,77 @@
 
 		this._bOpen = false;
 		this._id = getId();
-		this._oldZ = '';
+		//this._oldStyle = null;
+		//this._oldClass = null;
 		this._zIndex = '';
 		this._bCD = typeof this.config.countdown === 'number' && this.config.countdown > 0;
 
-		if(userWrap && userWrap.outerWidth){
-			//this.config.width = userWrap.outerWidth();
-			//this.config.height = userWrap.outerHeight();
-			userWrap.addClass('mgDialog');
-		}
+		var that = this;
 
-		this.init();
-
+		//键盘事件
 		this._hotkey = function(e){
 			var kc = e.originalEvent.keyCode;
-			var that = e.data.that;
 
 			var nodeName = document.activeElement.nodeName;
 
 			if(_focus === that._id){
 				if(kc === 13 && (nodeName !== 'INPUT' && nodeName !== 'TEXTAREA' || $(document.activeElement).hasClass('mgDialog_hk'))){
-					that.doFns(that.config.enterCall);
+					that.trigger(that.config.enterCall);
 
 				}else if(kc ===27){
-					that.doFns(that.config.escCall);
+					that.trigger(that.config.escCall);
 				}
 			}
 		};
+
+		//按钮委托事件
+		this._click = function (e){
+
+			var target = $(e.target),
+				role = target.data('role');
+
+			//执行按钮标记的函数
+			if(role && /^btn:/.test(role) && !target.hasClass('disabled')){
+				that.trigger(role.split(':')[1].split(','))
+			}
+		};
+
 		this._oldW = 0;
 		this._oldH = 0;
+
+		this.init();
+
 	};
 
 	Dialog.prototype = {
 
 		init : function(){
-			var that = this;
-			var dom = this.dom;
-			var config = this.config;
+			var dom = this.dom,
+				config = this.config;
 
 			dom.wrap = dom.wrap ? dom.wrap.append(this.dom.hk).append(this.dom.gap) : this.createWrap();
-			//dom.wrap = dom.wrap ? dom.wrap.append(this.dom.gap) : this.createWrap();
+
+			if(this._bUserWrap){
+				this._oldStyle = dom.wrap.attr('style');
+				this._oldClass = dom.wrap.attr('class');
+				dom.wrap.addClass('mgDialogU');
+			}else{
+				dom.wrap.appendTo($('body'));
+			}
+
+			dom.wrap.on('click',this._click);
 
 			!!config.width && dom.wrap.css('width',config.width);
 			!!config.height && dom.wrap.css('height',config.height);
 
-			this._oldZ = dom.wrap[0].style.zIndex;
-
 			addDialog(this);
-
-			dom.wrap.on('click',click).appendTo($('body'));
-
-			function click(e){
-
-				var target = $(e.target);
-				var role = target.data('role');
-
-				//执行按钮标记的函数
-				if(role && /^btn:/.test(role) && !target.hasClass('disabled')){
-					that.doFns(role.split(':')[1].split(','))
-				}
-			}
 
 			config.drag && drag(this);
 			this.setGap();
-
-
 		},
 
 		//接收数组如：['confirm','close'] 或者 字符串如：'confirm,close'
-		doFns : function(fns){
+		trigger : function(fns){
 			var config = this.config;
 			var fnName = '';
 
@@ -427,10 +443,12 @@
 				}
 
 				b.disabled && btn.addClass('disabled');
-				typeof b.id === 'string' && b.id !== '' && btn.attr('data-id', b.id);
+				b.hidden && btn.addClass('mgDialog_hidden');
 
 				return btn;
 			}
+
+			this.dom.buttons = btns;
 
 			return btns;
 
@@ -461,31 +479,24 @@
 
 			if(this._bOpen === true || this.test(b,this.config.onOpen) === false) return this;
 
-
 			_opened ++;
 
 			focusDialog(this._id,!this.config.autoFocus);
 
 			this._bOpen = true;
-			var that = this;
-			var $body = $('body');
-			var wrap = this.dom.wrap;
-			var config = this.config;
 
-
-
-
+			var that = this,
+				wrap = this.dom.wrap,
+				config = this.config;
 
 			if(config.hasMask){
 				if(_hasMask === 0){
-					$mask.addClass('mgDialog_show').appendTo($body.addClass('mgDialog_show'));
+					$mask.prependTo($('body')).addClass('mgDialog_show');
 				}
 				_hasMask ++;
-
 			}
 
 			wrap.addClass('mgDialog_show');
-
 
 			this.setPosition();
 
@@ -505,18 +516,14 @@
 					}else{
 						cdWrap.text(0);
 						clearInterval(that.cdTimer);
-						that.doFns(that.config.countdownCall);
+						that.trigger(that.config.countdownCall);
 
 					}
 
 				},1000)
 			}
 
-			this.config.hotKeys && $(document).on('keyup',{that:this},this._hotkey);
-
-
-
-			//
+			this.config.hotKeys && $(document).on('keyup',this._hotkey);
 
 			return this;
 		},
@@ -538,7 +545,7 @@
 
 				that.config.hotKeys && $(document).off('keyup',that._hotkey);
 
-				that.dom.wrap.css('z-index',that._oldZ);
+				//that.dom.wrap.css('z-index',that._oldStyle);
 
 				that.cdTimer && clearInterval(that.cdTimer);
 
@@ -552,7 +559,7 @@
 					if(_hasMask < 0) _hasMask = 0;
 					if(_hasMask === 0){
 						$mask.removeClass('mgDialog_show').remove();
-						$('body').removeClass('mgDialog_show');
+						//$('body').removeClass('mgDialog_show');
 					}
 				}
 
@@ -639,21 +646,17 @@
 			this._oldH = height;
 
 		},
-		getButton : function(mark){
-			var btns = this.dom.wrap.find('.mgDialog_footer [data-role^=btn]');
-			if(typeof mark === 'number'){
-				return btns.eq(mark)
-			}else if(typeof mark === 'string'){
-				return btns.filter('[data-id='+mark+']');
-			}
-		},
-		button : function(mark,opt){
+		button : function(index,opt){
 			//var opt = {
 			//	text : 'aaa',
 			//	call : 'bbb',
-			//	disabled : true
+			//	disabled : true,
+			//	hidden : false
+			//	type : 'confirm'
 			//};
-			var btn = this.getButton(mark);
+			//var btn = this.getButton(mark);
+
+			var btn = this.dom.buttons.eq(index);
 
 			if(typeof opt.text === 'string'){
 				btn.html(opt.text);
@@ -665,6 +668,16 @@
 
 			if(typeof opt.disabled === 'boolean'){
 				opt.disabled ? btn.addClass('disabled') : btn.removeClass('disabled');
+			}
+
+			if(typeof opt.hidden === 'boolean'){
+				opt.hidden ? btn.addClass('mgDialog_hidden') : btn.removeClass('mgDialog_hidden');
+			}
+
+			if(opt.type === 'confirm'){
+				btn.addClass('mgDialog_button_confirm')
+			}else if(opt.type === 'cancel'){
+				btn.removeClass('mgDialog_button_confirm')
 			}
 
 			return this;
@@ -687,11 +700,11 @@
 						cdWrap.text(0);
 						clearInterval(that.cdTimer);
 						if(typeof fb === 'function'){
-							fb()
+							fb.call(this)
 						}else if(typeof fb === 'string'){
-							that.doFns(fb)
+							that.trigger(fb)
 						}else{
-							that.doFns(that.config.countdownCall);
+							that.trigger(that.config.countdownCall);
 						}
 
 
@@ -811,23 +824,34 @@
 			removeDialog(this._id);
 			this.dom.wrap.off('mousedown',downFn);
 
-			if(this._bOpen && this.config.hasMask){
-				_hasMask --;
-				if(_hasMask < 0) _hasMask = 0;
-				if(_hasMask === 0){
-					$mask.removeClass('mgDialog_show').remove();
-					$('body').removeClass('mgDialog_show');
+			if(this._bOpen){
+
+				if(this.config.hasMask){
+					_hasMask --;
+					if(_hasMask <= 0){
+						$mask.removeClass('mgDialog_show').remove();
+						//$('body').removeClass('mgDialog_show');
+						_hasMask = 0
+					}
 				}
+
+				_opened --;
+				if(_opened < 0) _opened = 0;
 			}
 
 			this.cdTimer && clearInterval(this.cdTimer);
 			this.config.hotKeys && $(document).off('keyup',this._hotkey);
-			this.dom.wrap.off('click');
+			this.dom.wrap.off('click',this._click);
+
+			$document.off('mousemove',moveFn).off('mouseup',upFn).off('mousemove',rePosition);
 
 			if(this._bUserWrap){
 				this.dom.hk.remove();
 				this.dom.gap.remove();
-				this.dom.wrap.css('z-index',this._oldZ)
+				//console.log(this._oldStyle);
+				//console.log(this._oldClass);
+				this._oldStyle === undefined ?  this.dom.wrap.removeAttr('style') : this.dom.wrap.attr('style',this._oldStyle);
+				this._oldClass === undefined ?  this.dom.wrap.removeAttr('class') : this.dom.wrap.attr('class',this._oldClass);
 			}else{
 				this.dom.wrap.remove();
 			}
@@ -846,11 +870,10 @@
 			this._bOpen = null;
 			this._bUserWrap = null;
 			this._id = null;
-			this._oldZ = null;
+			this._oldStyle = null;
+			this._oldClass = null;
 			this._zIndex = null;
 			this._bCD = null;
-
-			$document.off('mousemove',moveFn).off('mouseup',upFn);
 
 			this.destroy = function(){};
 
@@ -894,12 +917,7 @@
 				content : text,
 				width : 270,
 				autoDestroy : true,
-				buttons : [
-					{
-						type : 'confirm',
-						call : 'close'
-					}
-				]
+				buttons : [{type : 'confirm'}]
 			}).open()
 		},
 		confirm : function(text,fn,title){
@@ -910,12 +928,8 @@
 				width : 270,
 				autoDestroy : true,
 				buttons : [
-					{
-						type : 'cancel'
-					},
-					{
-						type : 'confirm'
-					}
+					{type : 'cancel'},
+					{type : 'confirm'}
 				],
 				onConfirm : function(){
 					fn(true);
