@@ -34,26 +34,22 @@
 * 表单元素无法输入 [√]
 * 输入时按回车键不符合预期 [√]
 * 自定义margin 必须为0 思路：把_oldZ 改为 _oldStyle [√]
-* 按钮放在底部 [√]
+* 按钮底部定位 [√]
 * drag对话框选中文字 [√]
 * 遮罩特效使对话框z-index失效，故去掉 [√]
 * destroy()之后，自定义dom对话框完全还原 [√]
-*
-*
-* 期望:
+* 关闭mask后 窗口scroll值还原 [√]
 * button:添加hidden属性，去掉id属性，把button添加到dom.button，删除getButton() [√]
 * 自定义dom和自带dom的外层class分开，防止样式干扰 [√]
-* position() x方向的逻辑还没有跟新
-* window.onresize
-* 关闭mask后 窗口scroll值还原
-* reset()
+* window.onresize [√]
+* reset() [√]
+* width,height 支持auto [√]
 *
-* 放到最大 再缩小的时候 position()没有居中 ？
-* focus() ?
-* blur() ?
-* width,height 支持auto ?
-* mask添加动画 ?
-*
+* 期望:
+* focus()
+* blur()
+* quickClose()
+* 动画可配置
 *
 * 二次封装，综合应用：
 * 视频滚屏弹出效果
@@ -61,44 +57,75 @@
 * 图片预览效果
 * 大尺寸图片效果
 *
+*
+*
 * */
-(function(window,$,document){
-	//全局配置
+(function(window,$,document,undefined){
+
+	//全局默认值
+	var _baseZ		= 1000,			//z-index基准 遮罩的z-index 为_baseZ，对话框的依次累加
+		_dargMark	= 'dragbar',	//可拖拽元素标记
+		_cdReg		= /\{\%cd\}/gi, //倒数元素标记正则
+		_stCD		= '<span data-role="cd"></span>';	//倒计时元素模板
+
+	//对话框配置项
 	var _config = {
-		hasMask  : true,  //是否启用背景遮罩
-		hasTitle : true,  //是否有标题
-		hasCross : true,  //是否有关闭按钮X
-		hotKeys  : true,  //是否启用键盘控制
-		drag     : true,  //是否启用拖拽
-		fixed    : false, //是否fixed布局
-		defaultTitle : '提示',    //标题默认文字
-		buttonsAlign : 'right',  //按钮对齐方式
-		titleAlign   : 'left',   //标题对齐方式
-		contentAlign : 'left'    //内容对齐方式
+		hasMask			: true,		//是否启用背景遮罩 [*]
+		hasTitle		: true,		//是否有标题
+		hasCross		: true,		//是否有关闭按钮X
+		hotKeys			: true,		//是否启用键盘控制 [*]
+		drag			: true,		//是否启用拖拽 [*]
+		fixed			: false,	//是否fixed布局 [*]
+		autoFocus		: true,		//打开对话框时，是否自动聚焦 [*]
+		autoDestroy		: false,	//关闭对话框时，是否调用this.destroy() 销毁对话框 [*]
+		autoReset		: false,	//关闭对话框时，是否调用this.reset() 重置宽高，标题，内容，按钮
+		buttonsAlign	: 'right',	//按钮对齐方式
+		titleAlign		: 'left',	//标题对齐方式
+		contentAlign	: 'left',	//内容对齐方式
+		title 			: '提示',	//标题
+		content 		: '',		//内容
+		buttons 		: [],		//按钮
+		top 			: null,		//top值 [*]
+		left 			: null,		//left值 [*]
+		bottom 			: null,		//bottom值 [*]
+		right 			: null,		//right值 [*]
+		width 			: 0,		//宽度 [*]
+		height 			: 0,		//高度 [*]
+		countdown 		: 0,				//等待若干秒之后自动关闭对话框，0:不自动关闭对话框 [*]
+		gap 			: 10,				//默认间隙 [*]
+		enterCall		: 'confirm,close',	//当hotkeys为true时 按回车键执行... [*]
+		escCall			: 'cancel,close',	//当hotkeys为true时 按退出键执行... [*]
+		countdownCall	: 'close',			//倒计时结束后执行... [*]
+		onClose 		: null,		//关闭之前调用 return false 取消默认操作(关闭，打开，接受，取消) [*]
+		onOpen			: null,		//打开之前调用 [*]
+		onConfirm		: null,		//确认时调用 [*]
+		onCancel		: null		//取消时调用 [*]
+
 	};
 
-	var _baseZ = 1000; //z-index基准
-	var _baseGap = 10; //默认间隙
-	var _dargMark = 'dragbar';
-	var cdReg = /{%cd}/gi;
-
+	//元素模板
 	var $mask = $('<div class="mgDialog_mask" style="z-index:'+_baseZ+'"></div>'),
 		$wrap = $('<div class="mgDialog"></div>'),
 		$cross = $('<i class="mgDialog_cross" data-role="btn:cancel,close">×</i>'),
 		$title = $('<div data-role="title" class="mgDialog_title"></div>'),
 		$header = $('<div class="mgDialog_header"></div>'),
 		$content = $('<div data-role="content" class="mgDialog_content"></div>'),
-		$btn = $('<button class="mgDialog_button"></button>'),
+		$btn = $('<a class="mgDialog_button"></a>'),
 		$footer = $('<div class="mgDialog_footer">'),
 		/*
 		* 初始化时，复制$hk插入wrap内，open时获得焦点，
 		* 目的是让其他表单元素失去焦点，使按回车时不触发表单元素上的click事件，排除dialog上回车键绑定事件的干扰
 		* */
 		$hk = $('<input type="text" class="mgDialog_hk">'),
-		$gap = $('<i class="mgDialog_gap"></i>'),
+		$gap = $('<i class="mgDialog_gap"></i>'), //用于撑开对话框右下角的gap
 		$document = $(document);
 
-	var stCD = '<span data-role="cd"></span>';	
+	//中间值
+	var _hasMask = 0,  //背景遮罩计数
+		_opened = 0,   //已打开对话框计数
+		_focus = '',   //当前焦点对话框id
+		_dialogs = {}, //已实例化对话框集合，以id作键
+		_timer;
 
 	//获取 animationend 事件名兼容写法
 	var aniEndName = (function() {
@@ -113,11 +140,6 @@
 			}
 		}
 	}());
-
-	var _hasMask = 0,  //背景遮罩计数
-		_opened = 0,   //已打开对话框计数
-		_focus = '',   //当前焦点对话框id
-		_dialogs = {}; //已实例化对话框集合，以id作键
 
 	function getId(){
 		var n = 'd' + Math.random().toString().substring(2,12);
@@ -242,43 +264,43 @@
 	}
 
 	function getHtml(text){
-		return text && this._bCD ? text.replace(cdReg,stCD) : text;
+		return typeof text === 'string' ? text.replace(_cdReg,_stCD) : '';
+	}
+
+	function st(){
+		return $document.scrollTop();
+	}
+
+	function sl(){
+		return $document.scrollLeft();
+	}
+
+	function cw(){
+		return document.documentElement.clientWidth;
+	}
+
+	function ch(){
+		return document.documentElement.clientHeight;
+	}
+
+
+	$(window).on('resize',windowResize);
+	function windowResize(){
+		clearTimeout(_timer);
+
+		_timer = setTimeout(function(){
+			for(name in _dialogs){
+				_dialogs[name].setPosition()
+			}
+		},600);
+
 	}
 
 	var Dialog = function (cfg,userWrap){
-		var config = {
-			top : null,
-			left : null,
-			width : 0,
-			height : 0,
-			countdown : 0,	//等待若干秒之后自动关闭对话框，0:不自动关闭对话框
-			autoDestroy : false, //当close触发时候 是否调用this.destroy()
-			autoFocus : true,
-			gap : _baseGap,
-			//resetButtons : true, //预留 open()时重置按钮
-			enterCall : 'confirm,close', //当hotkeys为true时 按回车键执行...
-			escCall : 'cancel,close', //当hotkeys为true时 按退出键执行...
-			countdownCall : 'close', //倒计时结束后执行...
-			onClose : null,  //return false 取消默认操作(关闭，打开，接受，取消)
-			onOpen : null,
-			onConfirm : null,
-			onCancel : null,
-			buttons : []
-			//例子:
-			//buttons : [
-			//	{
-			//		type : 'confirm',
-			//		call : 'confirm,close',
-			//		text : '确定',
-			//		disabled : false,
-			//		hidden : false
-			//	}
-			//]
-		};
 
 		cfg = cfg || {};
 
-		this.config = $.extend({},_config,config,cfg);
+		this.config = $.extend({},_config,cfg || {});
 
 		this.dom = {
 			wrap : userWrap,
@@ -290,13 +312,14 @@
 		};
 
 		this._bUserWrap = !!userWrap;
-
 		this._bOpen = false;
 		this._id = getId();
 		//this._oldStyle = null;
 		//this._oldClass = null;
 		this._zIndex = '';
-		this._bCD = typeof this.config.countdown === 'number' && this.config.countdown > 0;
+		this._bCD = parseInt(this.config.countdown) > 0;
+		this._oldW = 0;
+		this._oldH = 0;
 
 		var that = this;
 
@@ -328,15 +351,12 @@
 			}
 		};
 
-		this._oldW = 0;
-		this._oldH = 0;
-
 		this.init();
 
 	};
 
 	Dialog.prototype = {
-
+		//_
 		init : function(){
 			var dom = this.dom,
 				config = this.config;
@@ -361,32 +381,7 @@
 			config.drag && drag(this);
 			this.setGap();
 		},
-
-		//接收数组如：['confirm','close'] 或者 字符串如：'confirm,close'
-		trigger : function(fns){
-			var config = this.config;
-			var fnName = '';
-
-			try{
-				var aFn = typeof fns === 'string' ? fns.split(',') : fns;
-
-				for(var i=0,a; a=aFn[i]; i++){
-
-					fnName = 'on' + a.substring(0,1).toUpperCase() + a.substring(1);
-
-					if(a === 'close'){
-						this.close();
-
-					}else if(typeof config[fnName] === 'function'){
-
-						if(config[fnName].call(this) === false){
-							break;
-						}
-					}
-				}
-			}catch (e){}
-
-		},
+		//_
 		createWrap : function(){
 
 			var config = this.config;
@@ -395,9 +390,10 @@
 			//创建标题
 			if(config.hasTitle){
 				var header = $header.clone();
-				var title = config.title ? this._bCD ? config.title.replace(cdReg,stCD) : config.title : config.defaultTitle;
+				var title = getHtml(config.title);
+				this.dom.title = $title.clone();
 
-				header.append($title.clone().html(title)).addClass('mgDialog_align_' + config.titleAlign);
+				header.append(this.dom.title.html(title)).addClass('mgDialog_align_' + config.titleAlign);
 				config.hasCross && header.append($cross.clone());
 				wrap.append(header);
 			}else{
@@ -406,8 +402,7 @@
 
 			//创建内容
 			this.dom.content = $content.clone();
-			wrap.append(this.dom.content.css('text-align',config.contentAlign).html(getHtml.call(this,config.content))).append(this.dom.hk).append(this.dom.gap);
-			//wrap.append(this.dom.content.css('text-align',config.contentAlign).html(getHtml.call(this,config.content))).append(this.dom.gap);
+			wrap.append(this.dom.content.css('text-align',config.contentAlign).html(getHtml(config.content))).append(this.dom.hk).append(this.dom.gap);
 
 			//创建按钮
 			if($.isArray(config.buttons) && config.buttons.length > 0){
@@ -418,28 +413,36 @@
 			return wrap;
 
 		},
+		//_
 		cerateButtons : function(arr){
-
 			var btns;
-
 			for(var i= 0,b; b = arr[i]; i++){
 				btns = btns ? btns.add(newBtn(b)) : newBtn(b);
 			}
 
 			function newBtn(b){
-				var btn;
+				var btn,text,call;
 				if(typeof b === 'string'){
 					btn = $(b)
 				}else if(typeof b === 'object'){
 					btn = $btn.clone();
+					text = getHtml(b.text);
 
 					if(b.type === 'confirm'){
-						btn.addClass('mgDialog_button_confirm').html(getHtml.call(this,b.text) || '确定').attr('data-role','btn:' +  (b.call || 'confirm,close'));
+						text = text || '确定';
+						call = b.call || 'confirm,close';
+						btn.addClass('mgDialog_button_confirm');
+
 					}else if(b.type === 'cancel'){
-						btn.html(getHtml.call(this,b.text) || '取消').attr('data-role','btn:' + (b.call || 'cancel,close'));
+						text = text || '取消';
+						call = b.call || 'cancel,close';
+
 					}else{
-						btn.html(getHtml.call(this,b.text) || '按钮').attr('data-role','btn:' + (b.call || ''));
+						text = text || '按钮';
+						call = b.call || '';
 					}
+
+					btn.html(text).attr('data-role','btn:' + call);
 				}
 
 				b.disabled && btn.addClass('disabled');
@@ -454,6 +457,7 @@
 
 
 		},
+		//_
 		setGap : function(){
 			var gap = this.config.gap,
 				wrap = this.dom.wrap;
@@ -465,6 +469,7 @@
 				height : gap
 			});
 		},
+		//_
 		setFooterHolder : function(){
 			if(this._bUserWrap) return;
 
@@ -475,102 +480,7 @@
 			}
 
 		},
-		open : function(b){
-
-			if(this._bOpen === true || this.test(b,this.config.onOpen) === false) return this;
-
-			_opened ++;
-
-			focusDialog(this._id,!this.config.autoFocus);
-
-			this._bOpen = true;
-
-			var that = this,
-				wrap = this.dom.wrap,
-				config = this.config;
-
-			if(config.hasMask){
-				if(_hasMask === 0){
-					$mask.prependTo($('body')).addClass('mgDialog_show');
-				}
-				_hasMask ++;
-			}
-
-			wrap.addClass('mgDialog_show');
-
-			this.setPosition();
-
-			this.dom.hk[0].focus();
-
-			if(this._bCD){
-				var cd = this.config.countdown;
-				var cdWrap = wrap.find('[data-role=cd]');
-
-				cdWrap.text(cd);
-
-				this.cdTimer = setInterval(function(){
-
-					cd --;
-					if(cd > 0){
-						cdWrap.text(cd);
-					}else{
-						cdWrap.text(0);
-						clearInterval(that.cdTimer);
-						that.trigger(that.config.countdownCall);
-
-					}
-
-				},1000)
-			}
-
-			this.config.hotKeys && $(document).on('keyup',this._hotkey);
-
-			return this;
-		},
-		close : function(b){
-			if(this._bOpen === false || this.test(b,this.config.onClose) === false) return this;
-
-			var that = this;
-			var wrap = this.dom.wrap;
-			that._bOpen = false;
-
-			if(aniEndName){
-				wrap.addClass('mgDialog_aniBack');
-				wrap.one(aniEndName, end);
-			}else{
-				end();
-			}
-
-			function end (){
-
-				that.config.hotKeys && $(document).off('keyup',that._hotkey);
-
-				//that.dom.wrap.css('z-index',that._oldStyle);
-
-				that.cdTimer && clearInterval(that.cdTimer);
-
-				wrap.removeClass('mgDialog_show mgDialog_aniBack');
-
-				_opened --;
-				if(_opened < 0) _opened = 0;
-
-				if(that.config.hasMask){
-					_hasMask --;
-					if(_hasMask < 0) _hasMask = 0;
-					if(_hasMask === 0){
-						$mask.removeClass('mgDialog_show').remove();
-						//$('body').removeClass('mgDialog_show');
-					}
-				}
-
-				focusLast();
-
-				that.config.autoDestroy && that.destroy();
-			}
-
-			return this;
-
-		},
+		//_
 		test : function(b,fn){
 
 			if(b === false){
@@ -580,15 +490,16 @@
 			}
 
 		},
+		//_
 		setPosition : function(){
 			this.setFooterHolder();
 
 			var wrap = this.dom.wrap,
 				config = this.config,
-				clientW = document.documentElement.clientWidth,
-				clientH = document.documentElement.clientHeight,
-				scrollTop = document.body.scrollTop || document.documentElement.scrollTop,
-				scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft,
+				clientW = cw(),
+				clientH = ch(),
+				scrollTop = st(),
+				scrollLeft = sl(),
 				width = wrap.outerWidth(),
 				height = wrap.outerHeight(),
 				positionX = 0,
@@ -646,16 +557,132 @@
 			this._oldH = height;
 
 		},
-		button : function(index,opt){
-			//var opt = {
-			//	text : 'aaa',
-			//	call : 'bbb',
-			//	disabled : true,
-			//	hidden : false
-			//	type : 'confirm'
-			//};
-			//var btn = this.getButton(mark);
+		//*
+		open : function(b){
 
+			if(this._bOpen === true || this.test(b,this.config.onOpen) === false) return this;
+
+			_opened ++;
+
+			focusDialog(this._id,!this.config.autoFocus);
+
+			this._bOpen = true;
+
+			var that = this,
+				wrap = this.dom.wrap,
+				config = this.config;
+
+			if(config.hasMask){
+				if(_hasMask === 0){
+					$mask.prependTo($('body')).addClass('mgDialog_show').data('scroll',{
+						t : st(),
+						l : sl()
+					});
+				}
+				_hasMask ++;
+			}
+
+			wrap.addClass('mgDialog_show');
+
+			this.setPosition();
+
+			this.dom.hk[0].focus();
+
+			if(this._bCD){
+				var cd = this.config.countdown;
+				var cdWrap = wrap.find('[data-role=cd]');
+
+				cdWrap.text(cd);
+
+				this.cdTimer = setInterval(function(){
+
+					cd --;
+					if(cd > 0){
+						cdWrap.text(cd);
+					}else{
+						cdWrap.text(0);
+						clearInterval(that.cdTimer);
+						that.trigger(that.config.countdownCall);
+
+					}
+
+				},1000)
+			}
+
+			this.config.hotKeys && $(document).on('keyup',this._hotkey);
+
+			return this;
+		},
+		//*
+		close : function(b){
+			if(this._bOpen === false || this.test(b,this.config.onClose) === false) return this;
+
+			var that = this;
+			var wrap = this.dom.wrap;
+			that._bOpen = false;
+
+			if(aniEndName){
+				wrap.addClass('mgDialog_aniBack');
+				wrap.one(aniEndName, end);
+			}else{
+				end();
+			}
+
+			function end (){
+
+				that.config.hotKeys && $(document).off('keyup',that._hotkey);
+
+				that.cdTimer && clearInterval(that.cdTimer);
+
+				wrap.removeClass('mgDialog_show mgDialog_aniBack');
+
+				_opened --;
+				if(_opened < 0) _opened = 0;
+
+				if(that.config.hasMask){
+					_hasMask --;
+					if(_hasMask < 0) _hasMask = 0;
+					if(_hasMask === 0){
+						var s = $mask.data('scroll');
+						$document.scrollTop(s.t).scrollLeft(s.l);
+						$mask.removeClass('mgDialog_show').remove();
+					}
+				}
+
+				focusLast();
+				that.config.autoReset && that.reset();
+				that.config.autoDestroy && that.destroy();
+			}
+
+			return this;
+
+		},
+		//* 接收数组如：['confirm','close'] 或者 字符串如：'confirm,close'
+		title : function(tit){
+			var title = this.dom.wrap.find('[data-role=title]');
+			typeof tit === 'string' ? title.html(tit) : title.empty().append(tit);
+			return this;
+
+		},
+		//*
+		content : function(cont){
+			var content = this.dom.wrap.find('[data-role=content]');
+			typeof cont === 'string' ? content.html(cont) : content.empty().append(cont);
+			return this;
+
+		},
+		//*
+		width : function(num){
+			this.dom.wrap.width(num);
+			return this;
+		},
+		//*
+		height : function(num){
+			this.dom.wrap.height(num);
+			return this;
+
+		},
+		button : function(index,opt){
 			var btn = this.dom.buttons.eq(index);
 
 			if(typeof opt.text === 'string'){
@@ -683,6 +710,7 @@
 			return this;
 
 		},
+		//*
 		countdown : function(cd,fb){
 			var that = this;
 			if(typeof cd === 'number' && cd > 0){
@@ -712,11 +740,10 @@
 
 				},1000)
 			}
+
+			return this;
 		},
-		reset : function(){
-			this.setPosition()
-		},
-		//参数 origin[数字0-12]：定位源，代表时钟方向，0为中心；gap[数字]：定位时与屏幕四边的最小距离（定位源为center时有效）
+		//* 参数 origin[数字0-12]：定位源，代表时钟方向，0为中心；gap[数字]：定位时与屏幕四边的最小距离（定位源为0时有效）
 		position : function(origin,gap){
 			this.setFooterHolder();
 
@@ -729,14 +756,14 @@
 
 			var	config = this.config,
 				that = this,
-				clientW = document.documentElement.clientWidth, //可视区域宽度
-				clientH = document.documentElement.clientHeight, //可视区域高度
-				scrollTop = config.fixed ? 0 : document.body.scrollTop || document.documentElement.scrollTop, //滚动高度 如果fixed定位 记为0
-				scrollLeft = config.fixed ? 0 : document.body.scrollLeft || document.documentElement.scrollLeft, //滚动左侧 如果fixed定位 记为0
+				clientW = cw(), //可视区域宽度
+				clientH = ch(), //可视区域高度
+				scrollTop = config.fixed ? 0 : st(), //滚动高度 如果fixed定位 记为0
+				scrollLeft = config.fixed ? 0 : sl(), //滚动左侧 如果fixed定位 记为0
 				top = isNaN(parseInt(wrap.css('top'))) ? clientH - parseInt(wrap.css('bottom')) - that._oldH : parseInt(wrap.css('top')), //当前top值
 				left = isNaN(parseInt(wrap.css('left'))) ? clientW - parseInt(wrap.css('right')) - that._oldW : parseInt(wrap.css('left')); //当前left值
 
-			gap = isNaN(parseInt(gap)) ? _baseGap : parseInt(gap); //定位时与屏幕四边的最小距离
+			gap = parseInt(gap) || this.config.gap; //定位时与屏幕四边的最小距离
 
 			var _top,_left,resTop,resLeft;//y方向定位差，x方向定位差，结果top值，结果left值
 
@@ -760,18 +787,18 @@
 					if(_top + gap + height - scrollTop > clientH){
 						resTop = scrollTop + clientH - height - gap;
 
-					//对话框顶部超出可视区域时，top取最小距离
+						//对话框顶部超出可视区域时，top取最小距离
 					}else if(_top - gap < scrollTop){
 
 						resTop = scrollTop + gap;
 
-					//两头都在可视区域nei，top直接取差值
+						//两头都在可视区域nei，top直接取差值
 					}else{
 
 						resTop = _top;
 					}
 
-				//对话框高度+间隙 大于 屏幕高度的时候，底部位置保持不变
+					//对话框高度+间隙 大于 屏幕高度的时候，底部位置保持不变
 				}else{
 					resTop = top - (height - this._oldH);
 				}
@@ -788,18 +815,29 @@
 
 			//x方向逻辑同y方向
 			if(oriX === 'center'){
-				_left = left - (width - this._oldW)/2;
 
-				if(_left - gap < scrollLeft){
-					resLeft = scrollLeft + gap;
-				}else if(_left + gap + width - scrollLeft > clientW){
-					resLeft = scrollLeft + clientW - width - gap;
+				if(width + gap*2 < clientW){
+
+					_left = left - (width - this._oldW)/2;
+
+					if(_left + gap + width - scrollLeft > clientW){
+						resLeft = scrollLeft + clientW - width - gap;
+
+					}else if(_left - gap < scrollLeft){
+
+						resLeft = scrollLeft + gap;
+
+					}else{
+
+						resLeft = _left;
+					}
 
 				}else{
-					resLeft = _left;
+					resLeft = left - (width - this._oldW);
 				}
 
 			}else if(oriX === 'left'){
+
 				if(config.fixed){
 					resLeft = left;
 				}
@@ -808,18 +846,72 @@
 				resLeft = left - (width - this._oldW);
 			}
 
-			//顶部保持不超出一个间隙
+			//顶部和左侧保持不超出一个间隙
 			if(!config.fixed){
 				if(resTop < gap) resTop = gap;
+				if(resLeft < gap) resLeft = gap;
 			}
-
 
 			wrap.css({'top':resTop + 'px','left':resLeft + 'px'});
 			$document.off('mousemove',rePosition);
 
 			this._oldW = width;
 			this._oldH = height;
+
+			return this;
 		},
+		reset : function(){
+			if(!this._bUserWrap){
+				var dom = this.dom;
+				var config = this.config;
+
+				//重置宽高
+				dom.wrap.css('width',!!config.width ? config.width : '');
+				dom.wrap.css('height',!!config.height ? config.height : '');
+
+				//重置标题
+				if(config.hasTitle){
+					dom.title.html(getHtml(config.title));
+				}
+
+				//重置内容
+				this.dom.content.html(getHtml(config.content));
+
+				//重置按钮
+				this.dom.footer.empty().append(this.cerateButtons(config.buttons))
+
+			}
+
+			return this;
+		},
+		//*
+		trigger : function(fns){
+			var config = this.config;
+			var fnName = '';
+
+			try{
+				var aFn = typeof fns === 'string' ? fns.split(',') : fns;
+
+				for(var i=0,a; a=aFn[i]; i++){
+
+					fnName = 'on' + a.substring(0,1).toUpperCase() + a.substring(1);
+
+					if(a === 'close'){
+						this.close();
+
+					}else if(typeof config[fnName] === 'function'){
+
+						if(config[fnName].call(this) === false){
+							break;
+						}
+					}
+				}
+			}catch (e){}
+
+			return this;
+
+		},
+		//*
 		destroy : function(){
 			removeDialog(this._id);
 			this.dom.wrap.off('mousedown',downFn);
@@ -830,7 +922,6 @@
 					_hasMask --;
 					if(_hasMask <= 0){
 						$mask.removeClass('mgDialog_show').remove();
-						//$('body').removeClass('mgDialog_show');
 						_hasMask = 0
 					}
 				}
@@ -848,8 +939,6 @@
 			if(this._bUserWrap){
 				this.dom.hk.remove();
 				this.dom.gap.remove();
-				//console.log(this._oldStyle);
-				//console.log(this._oldClass);
 				this._oldStyle === undefined ?  this.dom.wrap.removeAttr('style') : this.dom.wrap.attr('style',this._oldStyle);
 				this._oldClass === undefined ?  this.dom.wrap.removeAttr('class') : this.dom.wrap.attr('class',this._oldClass);
 			}else{
@@ -876,31 +965,6 @@
 			this._bCD = null;
 
 			this.destroy = function(){};
-
-		},
-		width : function(num,position){
-			this.dom.wrap.width(num);
-			if(position !== false) this.position(position);
-			return this;
-		},
-		height : function(num,position){
-			this.dom.wrap.height(num);
-			if(position !== false) this.position(position);
-			return this;
-
-		},
-		title : function(tit,position){
-			var title = this.dom.wrap.find('[data-role=title]');
-			typeof tit === 'string' ? title.html(tit) : title.empty().append(tit);
-			if(position !== false) this.position(position);
-			return this;
-
-		},
-		content : function(cont,position){
-			var content = this.dom.wrap.find('[data-role=content]');
-			typeof cont === 'string' ? content.html(cont) : content.empty().append(cont);
-			if(position !== false) this.position(position);
-			return this;
 
 		}
 

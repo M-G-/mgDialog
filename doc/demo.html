@@ -25,12 +25,16 @@
 	<button class="btn" id="_d2">表单元素获得焦点，禁用dialog回车</button>
 	<button class="btn" id="_d3">提交数据交互</button>
 	<button class="btn" id="_d3_2">提交数据交互2</button>
+	<br>
 
 	<button class="btn" id="_d4">自定义dom,销毁后的还原情况</button>
-	<div id="_d4_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
+	<div id="_d4_dom" style="width: 400px; padding: 20px; margin: 10px; line-height: 24px; background: #333; color: #fff;">
 		<p>自定义dom,销毁后的还原情况</p>
 		<a style="color:#fff" href="javascript:;" data-role="btn:close">[销毁]</a>
 	</div>
+
+	<button class="btn" id="_d5">reset测试</button>
+	<button class="btn" id="_d6">宽高auto</button>
 
 	<script>
 		var _w = 480;
@@ -40,6 +44,7 @@
 //			drag : false,
 			width: 480,
 //			height : 200,
+			autoReset : true,
 			buttons : [
 				{call:'moreH',text:'高+'},
 				{call:'lessH',text:'高-'},
@@ -53,16 +58,16 @@
 				{call:'remove',text:'removeText'}
 			],
 			onMoreH : function(){
-				_h += 200; this.height(_h);
+				_h += 200; this.height(_h).position();
 				var footer = this.dom.wrap.find('.mgDialog_footer');
-				var h = footer.outerHeight() + parseInt(footer.css('margin-top')) + parseInt(footer.css('margin-bottom')) + parseInt(footer.css('border-top-width')) + parseInt(footer.css('border-bottom-width'));
+//				var h = footer.outerHeight() + parseInt(footer.css('margin-top')) + parseInt(footer.css('margin-bottom')) + parseInt(footer.css('border-top-width')) + parseInt(footer.css('border-bottom-width'));
 
 			},
 			onLessH : function(){
 				_h -= 200; if(_h < 200) _h = 200; this.height(_h);
 			},
 			onMoreW : function(){
-				_w += 200; this.width(_w);
+				_w += 200; this.width(_w).position();
 			},
 			onLessW : function(){
 				_w -= 200; if(_w < 480) _h = 480; this.width(_w);
@@ -78,12 +83,12 @@
 			onMin : function(){
 				_h = 200;
 				_w = 480;
-				this.height(_h).width(_w);
+				this.height(_h).width(_w).position();
 			},
 			onMax : function(){
 				_h = 2000;
 				_w = 2000;
-				this.height(_h,false).width(_w);
+				this.height(_h,false).width(_w).position();
 			},
 //			fixed : true,
 			onAdd : function(){
@@ -203,8 +208,75 @@
 		});
 
 		$('#_d4').on('click',function(){
-			$('#_d4_dom').dialog({autoDestroy:true}).open();
+			$('#_d4_dom').dialog({
+				autoDestroy:true,
+				fixed:true,
+				right : 0,
+				bottom : 0
+			}).open();
 		});
+
+		var _d5 = $.dialog({
+			title : 'reset测试',
+			content : 'reset测试',
+//			autoReset : true,
+			width : 200,
+			height : 200,
+			buttons : [
+				{
+					type : 'cancel',
+					call : 'confirm'
+				},
+				{
+					type : 'confirm',
+					call : 'confirm'
+				}
+			],
+			onOpen : function(){
+				this.reset();
+			},
+			onConfirm : function(){
+				this
+						.width(400)
+						.height(400)
+						.title('XXX')
+						.content('XXX')
+						.button(0,{
+							disabled : true,
+							type : 'confirm',
+							text : 'XXX'
+						})
+						.position();
+			}
+		});
+		$('#_d5').on('click',function(){
+			_d5.open();
+		});
+
+		var _d6 = $.dialog({
+			title : '',
+			content : '',
+			width : 'auto',
+			height : 'auto',
+//			buttons : [
+//				{
+//					type : 'cancel',
+//					call : 'confirm'
+//				},
+//				{
+//					type : 'confirm',
+//					call : 'confirm'
+//				}
+//			],
+			onConfirm : function(){
+				this.width('auto').height('auto').position();
+			}
+		});
+		$('#_d6').on('click',function(){
+			_d6.open();
+		});
+
+
 
 	</script>
 	<br/>
@@ -665,7 +737,11 @@
 			d6_2.open()
 		})
 
-		var d6_3 = $('#d6_3_dom').dialog();
+		var d6_3 = $('#d6_3_dom').dialog({
+			onOpen : function(){
+				$('#d6_3_dom').attr('src',$('#d6_3_dom').attr('_src'))
+			}
+		});
 		$('#d6_3').on('click',function(){
 			d6_3.open()
 		})
