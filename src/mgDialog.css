@@ -2,7 +2,7 @@
 /*mgDialog v0.1*/
 
 /*容器*/
-.mgDialog{ display: none; color: #333; width: 380px; font-family: STXihei, "microsoft yahei", Arial; background: #fff; border: 1px solid #bbb; border-radius: 5px; position: absolute;  font-size: 14px; _word-break:break-all;}
+.mgDialog{ display: none; color: #333; width: 320px; font-family: STXihei, "microsoft yahei", Arial; background: #fff; border: 1px solid #bbb; border-radius: 5px; position: absolute;  font-size: 14px; _word-break:break-all;}
 .mgDialogU{ display: none; position: absolute; margin: 0 !important;}
 
 .mgDialog.mgDialog_show,

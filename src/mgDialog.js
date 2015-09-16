@@ -4,24 +4,19 @@
 * version: 0.1
 *
 * 实现功能:
-* [√] 1.结构可配置:标题，按钮，关闭X，遮罩(模态)
-* [√] 2.可完全自定义dom结构
-* [√] 3.两种定位方式:absolute(默认)、fixed
-* [√] 4.事件可配置:按钮，按键，计时
-* [√] 5.自定义事件
-* [√] 6.按键监听
-* [√] 7.倒计时
-* [√] 8.出入场动画
-* [√] 9.多窗口
-* [√] 10.拖拽
-* [√] 11.内置方法 alert confirm prompt toast
+* 结构可配置:标题，按钮，关闭X，遮罩(模态)
+* 可完全自定义dom结构
+* 两种定位方式:absolute(默认)、fixed
+* 事件可配置:按钮，按键，计时
+* 自定义事件
+* 按键监听
+* 倒计时
+* 出入场动画
+* 多窗口
+* 拖拽
+* 内置方法 alert confirm prompt toast
 *
-* open(b)
-* close(b)
-* destroy()
-* trigger()
-*
-* 搞定：
+* 计划:
 * title(str|jqObj,position) [√]
 * content(str|jqObj,position) [√]
 * width(num,position) [√]
@@ -33,7 +28,7 @@
 * 链式调用 [√]
 * 表单元素无法输入 [√]
 * 输入时按回车键不符合预期 [√]
-* 自定义margin 必须为0 思路：把_oldZ 改为 _oldStyle [√]
+* 自定义margin 必须为0 [√]
 * 按钮底部定位 [√]
 * drag对话框选中文字 [√]
 * 遮罩特效使对话框z-index失效，故去掉 [√]
@@ -56,8 +51,6 @@
 * 中奖弹出效果
 * 图片预览效果
 * 大尺寸图片效果
-*
-*
 *
 * */
 (function(window,$,document,undefined){
@@ -91,8 +84,8 @@
 		right 			: null,		//right值 [*]
 		width 			: 0,		//宽度 [*]
 		height 			: 0,		//高度 [*]
-		countdown 		: 0,				//等待若干秒之后自动关闭对话框，0:不自动关闭对话框 [*]
 		gap 			: 10,				//默认间隙 [*]
+		countdown 		: 0,				//等待若干秒之后自动关闭对话框，0:不自动关闭对话框 [*]
 		enterCall		: 'confirm,close',	//当hotkeys为true时 按回车键执行... [*]
 		escCall			: 'cancel,close',	//当hotkeys为true时 按退出键执行... [*]
 		countdownCall	: 'close',			//倒计时结束后执行... [*]
