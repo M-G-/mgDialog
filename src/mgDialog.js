@@ -301,7 +301,7 @@
 			gap : $gap.clone(),
 			footer : null,
 			footHolder : null,
-			buttons : null //暂时无用
+			buttons : null
 		};
 
 		this._bUserWrap = !!userWrap;
@@ -736,8 +736,8 @@
 
 			return this;
 		},
-		//* 参数 origin[数字0-12]：定位源，代表时钟方向，0为中心；gap[数字]：定位时与屏幕四边的最小距离（定位源为0时有效）
-		position : function(origin,gap){
+		//* 参数 origin[数字0-12]：定位源，代表时钟方向，0为中心
+		position : function(origin){
 			this.setFooterHolder();
 
 			var wrap = this.dom.wrap,
@@ -754,9 +754,8 @@
 				scrollTop = config.fixed ? 0 : st(), //滚动高度 如果fixed定位 记为0
 				scrollLeft = config.fixed ? 0 : sl(), //滚动左侧 如果fixed定位 记为0
 				top = isNaN(parseInt(wrap.css('top'))) ? clientH - parseInt(wrap.css('bottom')) - that._oldH : parseInt(wrap.css('top')), //当前top值
-				left = isNaN(parseInt(wrap.css('left'))) ? clientW - parseInt(wrap.css('right')) - that._oldW : parseInt(wrap.css('left')); //当前left值
-
-			gap = parseInt(gap) || this.config.gap; //定位时与屏幕四边的最小距离
+				left = isNaN(parseInt(wrap.css('left'))) ? clientW - parseInt(wrap.css('right')) - that._oldW : parseInt(wrap.css('left')), //当前left值
+				gap = parseInt(this.config.gap) || 0; //定位时与屏幕四边的最小距离
 
 			var _top,_left,resTop,resLeft;//y方向定位差，x方向定位差，结果top值，结果left值
 
@@ -966,20 +965,20 @@
 
 	$.extend({
 		dialog : function(cfg){
-			return new Dialog(cfg)
+			return new Dialog(cfg);
 		},
 		alert : function(text,title){
-			new Dialog({
+			return new Dialog({
 				title : title,
 				content : text,
 				width : 270,
 				autoDestroy : true,
 				buttons : [{type : 'confirm'}]
-			}).open()
+			}).open();
 		},
 		confirm : function(text,fn,title){
 
-			new Dialog({
+			return new Dialog({
 				title : title,
 				content : text,
 				width : 270,
@@ -994,7 +993,7 @@
 				onCancel : function(){
 					fn(false);
 				}
-			}).open()
+			}).open();
 		},
 		prompt : function(text,fn,title){
 			function submit(e){
@@ -1036,16 +1035,18 @@
 
 			d.open();
 
-			input[0].focus()
+			input[0].focus();
+
+			return d;
 
 		},
 		toast : function(text,width){
-			new Dialog({
+			return new Dialog({
 				hasTitle : false,
 				contentAlign : 'center',
 				hasCross : false,
 				content : text || 'toast',
-				width : width || 160,
+				width : width || 'auto',
 				autoDestroy : true,
 				autoFocus : false,
 				countdown : 3,
@@ -1053,7 +1054,7 @@
 				hotKeys : false,
 				fixed : true,
 				bottom : 100
-			}).open()
+			}).open();
 		}
 	});
 
