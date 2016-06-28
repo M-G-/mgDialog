@@ -8,447 +8,678 @@
 	<script type="text/javascript" src="jquery.min.js"></script>
 	<script type="text/javascript" src="../src/mgDialog.js"></script>
 	<style>
-		body{ padding: 20px;}
-		.box{ padding-left: 30px;}
+		body{ padding: 20px; padding-top: 0;}
+		.description{ color: #999; }
+		.description a{color: #666; text-decoration: none;}
+		.description a:hover{color: #333; }
+		/*.box{ padding-left: 30px;}*/
 		hr{ margin: 40px 0;}
-		.btn{margin: 10px; padding: 7px 10px; z-index: 1001;}
+		.btn{ _margin: 10px; padding:0 10px; height: 30px; line-height: 30px; font-size: 14px; z-index: 1001; float: left; border: 1px solid #333; background: #ddd; border-right-width: 0; border-radius: 5px 0 0 5px; cursor: pointer;}
 		h2{ margin-top: 36px;}
+		xmp{ background: #393939; color: #9ac27e; line-height: 20px; margin: 0; padding: 0 15px; word-wrap:break-word; overflow: scroll;}
+		.pre_title{ height: 30px; background: #333; color: #fff; font-size: 12px; line-height: 30px; text-indent: 10px; _border-radius: 5px; margin: 0; border-bottom: 1px solid #666; cursor: pointer; }
+		.pre_source{ width: 50px; height: 30px; overflow: hidden; _margin: 10px; float: left; border-radius: 0 5px 5px 0; max-width: 980px;}
+		.pre_source.show{ width: auto; height: auto; border-radius: 0 5px 5px 5px;}
+		.pre_source.show .pre_title{ height: 29px;}
+		.block{ margin: 30px;}
+		.cf:before,.cf:after {content: " "; display: table; }
+		.cf:after {clear: both; }
+		.cf {*zoom: 1; }
+		.btn-block{  border-right-width: 1px; margin-right: 20px;}
 	</style>
 </head>
 <body>
+<script>
+$(function(){
+	var block = $('.block');
+	block.each(function(){
+
+		var $this = $(this),
+			$box = $('<div class="pre_source"><p class="pre_title">代码</p></div>'),
+			$code = $('<xmp></xmp>').text($this.html());
+
+		$box.append($code).appendTo($this);
+
+	});
+
+	$('body').on('click','.pre_title',function(){
+		$(this).parent().toggleClass('show');
+	})
+
+})
+</script>
+<pre class="description">/*!
+* mgDialog jQuery对话框插件DEMO
+* author: Mango
+* version: 0.1
+* github: <a href="https://github.com/M-G-/mgDialog" target="_blank">https://github.com/M-G-/mgDialog</a>
+*
+* 实现功能:
+* 	结构可配置:标题，按钮，关闭X，遮罩(模态)
+* 	可完全自定义dom结构
+* 	两种定位方式:absolute(默认)、fixed
+* 	事件可配置:按钮，按键，计时
+* 	自定义事件
+* 	按键监听
+* 	倒计时
+* 	出入场动画
+* 	多窗口
+* 	拖拽
+* 	内置方法:alert confirm prompt toast
+*
+* 其他特性:
+* 	链式调用
+* 	拖拽对话框和选中文字
+* 	destroy()之后，自定义dom对话框完全还原
+* 	关闭mask后，窗口scroll值还原
+* 	自定义dom和自带dom的外层class分开，防止样式干扰
+* 	window.onresize时自动定位
+* */</pre>
+
+<!--<div class="box">-->
+
+	<!--<h2>测试</h2>-->
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d1">定位测试</button>-->
+<!--<script>-->
+	<!--var _w = 480;-->
+	<!--var _h = 200;-->
+	<!--var _d1 = $.dialog({-->
+		<!--width: 480,-->
+		<!--autoReset : true,-->
+		<!--buttonsAlign : 'center',-->
+		<!--buttons : [-->
+			<!--{call:'moreH',text:'高+'},-->
+			<!--{call:'lessH',text:'高-'},-->
+			<!--{call:'moreW',text:'宽+'},-->
+			<!--{call:'lessW',text:'宽-'},-->
+			<!--{call:'moreAll',text:'all-'},-->
+			<!--{call:'lessAll',text:'all-'},-->
+			<!--{call:'max',text:'max'},-->
+			<!--{call:'min',text:'min'}-->
+		<!--],-->
+		<!--onMoreH : function(){-->
+			<!--_h += 200;-->
+			<!--this.height(_h).position();-->
+
+		<!--},-->
+		<!--onLessH : function(){-->
+			<!--_h -= 200; if(_h < 200) _h = 200;-->
+			<!--this.height(_h).position();-->
+		<!--},-->
+		<!--onMoreW : function(){-->
+			<!--_w += 200;-->
+			<!--this.width(_w).position();-->
+		<!--},-->
+		<!--onLessW : function(){-->
+			<!--_w -= 200;-->
+			<!--if(_w < 480) _h = 480;-->
+			<!--this.width(_w).position();-->
+		<!--},-->
+		<!--onMoreAll : function(){-->
+			<!--_h += 200; this.height(_h);-->
+			<!--_w += 200; this.width(_w).position();-->
+		<!--},-->
+		<!--onLessAll : function(){-->
+			<!--_h -= 200; if(_h < 200) _h = 200; this.height(_h);-->
+			<!--_w -= 200; if(_w < 480) _h = 480; this.width(_w).position();-->
+		<!--},-->
+		<!--onMin : function(){-->
+			<!--_h = 200;-->
+			<!--_w = 480;-->
+			<!--this.height(_h).width(_w).position();-->
+		<!--},-->
+		<!--onMax : function(){-->
+			<!--_h = 2000;-->
+			<!--_w = 2000;-->
+			<!--this.height(_h,false).width(_w).position();-->
+		<!--}-->
+	<!--});-->
+	<!--$('#_d1').on('click',function(){-->
+		<!--_d1.open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
+
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d2">表单元素获得焦点，禁用回车事件</button>-->
+<!--<script>-->
+	<!--var _d2 = $.dialog({-->
+		<!--content : '<input type ="text"><br/><br/><textarea></textarea>'-->
+	<!--});-->
+	<!--$('#_d2').on('click',function(){-->
+		<!--_d2.open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
+
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d3">提交数据交互</button>-->
+<!--<script>-->
+	<!--var _d3 = $.dialog({-->
+		<!--content : '功能点：<ul><li>按钮操作:button()</li><li>倒计时:countdown()</li></ul>',-->
+		<!--buttons : [-->
+			<!--{-->
+				<!--type : 'confirm',-->
+				<!--call : 'confirm',-->
+				<!--text : '提交'-->
+			<!--}-->
+		<!--],-->
+		<!--enterCall : 'confirm',-->
+		<!--onClose : function(){-->
+			<!--if(this.posting){-->
+				<!--$.toast('正在提交中');-->
+				<!--return false;-->
+			<!--}-->
+
+			<!--this.success ? $.toast('成功') : $.toast('取消');-->
+			<!--return true;-->
+		<!--},-->
+		<!--onConfirm : function(){-->
+			<!--if(this.success){-->
+				<!--this.trigger('close');-->
+
+			<!--}else{-->
+				<!--if(_d3.posting) return;-->
+				<!--var that = this;-->
+				<!--_d3.posting = true;-->
+
+				<!--this.button(0,{-->
+					<!--text : '提交中...',-->
+					<!--disabled : true-->
+				<!--});-->
+
+				<!--setTimeout(function(){-->
+					<!--that.posting = false;-->
+					<!--that.success = true;-->
+					<!--that.button(0,{-->
+						<!--text : '成功，<span data-role="cd"></span>秒之后关闭'-->
+					<!--}).countdown(3,'close'); //countdown 参数：倒数时间[number]；回调[string:事件流，function:回调函数，空缺或其他：countdownCall属性定义的事件流]-->
+
+				<!--},1600)-->
+			<!--}-->
+
+		<!--}-->
+	<!--});-->
+	<!--_d3.posting = false;-->
+	<!--_d3.success = false;-->
+	<!--$('#_d3').on('click',function(){-->
+		<!--_d3.open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
+
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d3_2">提交数据交互2</button>-->
+<!--<script>-->
+	<!--var _d3_2 = $.dialog({-->
+		<!--content : '简易版</li></ul>',-->
+		<!--buttons : [-->
+			<!--{-->
+				<!--type : 'confirm',-->
+				<!--call : 'confirm',-->
+				<!--text : '提交'-->
+			<!--}-->
+		<!--],-->
+		<!--hotKeys : false,-->
+		<!--onClose : function(){-->
+			<!--return !this.posting;-->
+		<!--},-->
+		<!--onConfirm : function(){-->
+
+			<!--if(this.posting) return;-->
+
+			<!--var that = this;-->
+			<!--this.posting = true;-->
+
+			<!--this.button(0,{-->
+				<!--text : '提交中...',-->
+				<!--type : 'cancel',-->
+				<!--disabled : true-->
+			<!--});-->
+
+			<!--setTimeout(function(){-->
+				<!--that.posting = false;-->
+
+				<!--that.button(0,{-->
+					<!--text : '关闭',-->
+					<!--disabled : false,-->
+					<!--call : 'close'-->
+				<!--});-->
+
+				<!--that.content('提交成功！')-->
+
+			<!--},4000)-->
+
+		<!--}-->
+	<!--});-->
+	<!--$('#_d3_2').on('click',function(){-->
+		<!--_d3_2.open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
 
 
 
-<div class="box">
-	<h2></h2>
-	<button class="btn" id="_d1">扩展定位</button>
-	<button class="btn" id="_d2">表单元素获得焦点，禁用dialog回车</button>
-	<button class="btn" id="_d3">提交数据交互</button>
-	<button class="btn" id="_d3_2">提交数据交互2</button>
-	<br>
-
-	<button class="btn" id="_d4">自定义dom,销毁后的还原情况</button>
-	<div id="_d4_dom" style="width: 400px; padding: 20px; margin: 10px; line-height: 24px; background: #333; color: #fff;">
-		<p>自定义dom,销毁后的还原情况</p>
-		<a style="color:#fff" href="javascript:;" data-role="btn:close">[销毁]</a>
-	</div>
-
-	<button class="btn" id="_d5">reset测试</button>
-	<button class="btn" id="_d6">宽高auto</button>
-
-	<script>
-		var _w = 480;
-		var _h = 200;
-		var _d1 = $.dialog({
-
-//			drag : false,
-			width: 480,
-//			height : 200,
-			autoReset : true,
-			buttons : [
-				{call:'moreH',text:'高+'},
-				{call:'lessH',text:'高-'},
-				{call:'moreW',text:'宽+'},
-				{call:'lessW',text:'宽-'},
-				{call:'moreAll',text:'all-'},
-				{call:'lessAll',text:'all-'},
-				{call:'max',text:'max'},
-				{call:'min',text:'min'},
-				{call:'add',text:'addText'},
-				{call:'remove',text:'removeText'}
-			],
-			onMoreH : function(){
-				_h += 200; this.height(_h).position(6,100);
-				var footer = this.dom.wrap.find('.mgDialog_footer');
-//				var h = footer.outerHeight() + parseInt(footer.css('margin-top')) + parseInt(footer.css('margin-bottom')) + parseInt(footer.css('border-top-width')) + parseInt(footer.css('border-bottom-width'));
-
-			},
-			onLessH : function(){
-				_h -= 200; if(_h < 200) _h = 200; this.height(_h);
-			},
-			onMoreW : function(){
-				_w += 200; this.width(_w).position();
-			},
-			onLessW : function(){
-				_w -= 200; if(_w < 480) _h = 480; this.width(_w);
-			},
-			onMoreAll : function(){
-				_h += 200; this.height(_h);
-				_w += 200; this.width(_w);
-			},
-			onLessAll : function(){
-				_h -= 200; if(_h < 200) _h = 200; this.height(_h);
-				_w -= 200; if(_w < 480) _h = 480; this.width(_w);
-			},
-			onMin : function(){
-				_h = 200;
-				_w = 480;
-				this.height(_h).width(_w).position();
-			},
-			onMax : function(){
-				_h = 2000;
-				_w = 2000;
-				this.height(_h,false).width(_w).position();
-			},
-//			fixed : true,
-			onAdd : function(){
-				this.dom.wrap.find('.mgDialog_content').append($('<p class="p">占位'+Date.now()+'</p>'));
-				this.position();
-			},
-			onRemove : function(){
-				this.dom.wrap.find('.p').eq(0).remove();
-				this.position();
-			}
-		});
-		$('#_d1').on('click',function(){
-			_d1.open();
-		});
-
-		var _d2 = $.dialog({
-			content : '<input type ="text"><br/><br/><textarea></textarea>'
-		});
-		$('#_d2').on('click',function(){
-			_d2.open();
-		});
-
-		var _d3 = $.dialog({
-			content : '功能点：<ul><li>按钮操作:button()</li><li>倒计时:countdown()</li></ul>',
-			buttons : [
-				{
-					type : 'confirm',
-					call : 'confirm',
-					text : '提交'
-				}
-			],
-			enterCall : 'confirm',
-			onClose : function(){
-				if(this.posting){
-					$.toast('正在提交中');
-					return false;
-				}
-
-				this.success ? $.toast('成功') : $.toast('取消');
-				return true;
-			},
-			onConfirm : function(){
-				if(this.success){
-					this.trigger('close');
-
-				}else{
-					if(_d3.posting) return;
-					var that = this;
-					_d3.posting = true;
-
-					this.button(0,{
-						text : '提交中...',
-						disabled : true
-					});
-
-					setTimeout(function(){
-						that.posting = false;
-						that.success = true;
-						that.button(0,{
-							text : '成功，<span data-role="cd"></span>秒之后关闭'
-						}).countdown(3,'close'); //countdown 参数：倒数时间[number]；回调[string:事件流，function:回调函数，空缺或其他：countdownCall属性定义的事件流]
-
-					},1600)
-				}
-
-			}
-		});
-		_d3.posting = false;
-		_d3.success = false;
-		$('#_d3').on('click',function(){
-			_d3.open();
-		});
-
-		var _d3_2 = $.dialog({
-			content : '简易版</li></ul>',
-			buttons : [
-				{
-					type : 'confirm',
-					call : 'confirm',
-					text : '提交'
-				}
-			],
-			hotKeys : false,
-			onClose : function(){
-				return !this.posting;
-			},
-			onConfirm : function(){
-
-				if(this.posting) return;
-
-				var that = this;
-				this.posting = true;
-
-				this.button(0,{
-					text : '提交中...',
-					type : 'cancel',
-					disabled : true
-				});
-
-				setTimeout(function(){
-					that.posting = false;
-
-					that.button(0,{
-						text : '关闭',
-						disabled : false,
-						call : 'close'
-					});
-
-					that.content('提交成功！')
-
-				},4000)
-
-			}
-		});
-		$('#_d3_2').on('click',function(){
-			_d3_2.open();
-		});
-
-		$('#_d4').on('click',function(){
-			$('#_d4_dom').dialog({
-				autoDestroy:true,
-				fixed:true,
-				right : 0,
-				bottom : 0
-			}).open();
-		});
-
-		var _d5 = $.dialog({
-			title : 'reset测试',
-			content : 'reset测试',
-//			autoReset : true,
-			width : 200,
-			height : 200,
-			buttons : [
-				{
-					type : 'cancel',
-					call : 'confirm'
-				},
-				{
-					type : 'confirm',
-					call : 'confirm'
-				}
-			],
-			onOpen : function(){
-				this.reset();
-			},
-			onConfirm : function(){
-				this
-						.width(400)
-						.height(400)
-						.title('XXX')
-						.content('XXX')
-						.button(0,{
-							disabled : true,
-							type : 'confirm',
-							text : 'XXX'
-						})
-						.position();
-			}
-		});
-		$('#_d5').on('click',function(){
-			_d5.open();
-		});
-
-		var _d6 = $.dialog({
-			title : '',
-			content : '',
-			width : 'auto',
-			height : 'auto',
-//			buttons : [
-//				{
-//					type : 'cancel',
-//					call : 'confirm'
-//				},
-//				{
-//					type : 'confirm',
-//					call : 'confirm'
-//				}
-//			],
-			onConfirm : function(){
-				this.width('auto').height('auto').position();
-			}
-		});
-		$('#_d6').on('click',function(){
-			_d6.open();
-		});
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d5">reset测试</button>-->
+<!--<script>-->
+	<!--var _d5 = $.dialog({-->
+		<!--title : 'reset测试',-->
+		<!--content : 'reset测试',-->
+		<!--// autoReset : true,-->
+		<!--width : 200,-->
+		<!--height : 200,-->
+		<!--buttons : [-->
+			<!--{-->
+				<!--type : 'cancel'-->
+			<!--},-->
+			<!--{-->
+				<!--type : 'confirm',-->
+				<!--call : 'confirm',-->
+				<!--text : '放大'-->
+			<!--}-->
+		<!--],-->
+		<!--onOpen : function(){-->
+			<!--this.reset();-->
+		<!--},-->
+		<!--onConfirm : function(){-->
+			<!--this.width(400)-->
+				<!--.height(400)-->
+				<!--.title('XXX')-->
+				<!--.content('XXX')-->
+				<!--.button(0,{-->
+					<!--disabled : true,-->
+					<!--type : 'confirm',-->
+					<!--text : 'XXX'-->
+				<!--})-->
+				<!--.position();-->
+		<!--}-->
+	<!--});-->
+	<!--$('#_d5').on('click',function(){-->
+		<!--_d5.open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
 
 
 
-	</script>
-	<br/>
-</div>
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d6">宽高auto</button>-->
+<!--<script>-->
+	<!--var _d6 = $.dialog({-->
+		<!--content : '宽高设为auto',-->
+		<!--// width : 'auto',-->
+		<!--// height : 'auto',-->
+		<!--buttons : [-->
+			<!--{-->
+				<!--type : 'confirm',-->
+				<!--call : 'confirm',-->
+				<!--text : 'auto'-->
+			<!--}-->
+		<!--],-->
+		<!--onConfirm : function(){-->
+			<!--this.width('auto').height('auto').position();-->
+		<!--}-->
+	<!--});-->
+	<!--$('#_d6').on('click',function(){-->
+		<!--_d6.open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
 
-<hr/>
+	<!--<div class="block cf">-->
+<!--<button class="btn" id="_d4">自定义dom,销毁后的还原情况</button>-->
+<!--<script>-->
+	<!--$('#_d4').on('click',function(){-->
+		<!--$('#_d4_dom').dialog({-->
+			<!--autoDestroy:true-->
+		<!--}).open();-->
+	<!--});-->
+<!--</script>-->
+	<!--</div>-->
+	<!--<div id="_d4_dom" style="width: 400px; padding: 20px; margin-left: 30px; margin-top: -20px; line-height: 24px; background: #333; color: #fff;">-->
+		<!--<p>自定义dom,销毁后的还原情况</p>-->
+		<!--<a style="color:#fff" href="javascript:;" data-role="btn:close">[销毁]</a>-->
+	<!--</div>-->
+
+
+<!--</div>-->
+
+<!--<hr/>-->
 <h1>1.基础</h1>
 
 <div class="box">
 	<h2>1.1基本使用方法</h2>
-	<button class="btn" id="d1_1">简单的对话框</button>
-	<button class="btn" id="d1_2">禁止一些默认项</button>
-	<script>
-		var d1_1 = $.dialog({
-			content : '这是一个简单的对话框<br/>默认有遮罩层<br/>默认监听键盘esc,enter按键<br/>默认对话框可拖拽<br/>$.dialog()创建一个对话框<br/>调用open()打开对话框'
-		});
-		$('#d1_1').on('click',function(){
-			d1_1.open()
-		});
 
-		var d1_2 = $.dialog({
-			content : 'hasMask:false禁止了遮罩<br/>hotKeys:false禁用键盘监听<br/>drag:false禁用拖拽<br/>可手动调用close()关闭对话框<br/><a href="javascript:;" onClick="d1_2.close()">关闭</a>',
-			hasMask : false,
-			hotKeys : false,
-			drag : false
-		});
-		$('#d1_2').on('click',function(){
-			d1_2.open()
-		});
+	<div class="block cf">
+<button class="btn" id="d1_1">简单的对话框</button>
+<script>
+	var d1_1 = $.dialog({
+		content : '这是一个简单的对话框<br/>默认有遮罩层<br/>默认监听键盘esc,enter按键<br/>默认对话框可拖拽<br/>$.dialog()创建一个对话框<br/>调用open()打开对话框'
+	});
+	$('#d1_1').on('click',function(){
+		d1_1.open()
+	});
+</script>
+	</div>
 
-	</script>
+	<div class="block cf">
+<button class="btn" id="d1_2">禁止一些默认项</button>
+<script>
+	var d1_2 = $.dialog({
+		content : 'hasMask:false禁止了遮罩<br/>hotKeys:false禁用键盘监听<br/>drag:false禁用拖拽<br/>可手动调用close()关闭对话框<br/><a href="javascript:;" onClick="d1_2.close()">关闭</a>',
+		hasMask : false,
+		hotKeys : false,
+		drag : false
+	});
+	$('#d1_2').on('click',function(){
+		d1_2.open()
+	});
+
+</script>
+	</div>
+
 	<br/>
 
 	<h2>1.2尺寸、位置、定位方式</h2>
-	<button class="btn" id="d2_1">宽高以及位置</button>
-	<button class="btn" id="d2_2">fixed定位</button>
-	<script>
-		var d2_1 = $.dialog({
-			content : '通过width、height设置固定宽高<br/>top、bottom、left、right设置距屏幕四边的距离<br/>top、left优先级高于right、bottom',
-			width:300,
-			height : 300,
-			bottom : 10,
-			right : 10
-		});
-		$('#d2_1').on('click',function(){
-			d2_1.open()
-		});
+	<div class="block cf">
+<button class="btn" id="d2_1">宽高以及位置</button>
+<script>
+	var d2_1 = $.dialog({
+		content : '通过width、height设置固定宽高<br/>top、bottom、left、right设置距屏幕四边的距离<br/>top、left优先级高于right、bottom',
+		width:300,
+		height : 300,
+		bottom : 10,
+		right : 10
+	});
+	$('#d2_1').on('click',function(){
+		d2_1.open()
+	});
+</script>
+	</div>
 
-		var d2_2 = $.dialog({
-			content : '把fixed置为true,开启fixed定位',
-			fixed : true,
-			bottom : 10,
-			right : 10
-		});
-		$('#d2_2').on('click',function(){
-			d2_2.open()
-		})
-	</script>
+	<div class="block cf">
+<button class="btn" id="d2_2">fixed定位</button>
+<script>
+	var d2_2 = $.dialog({
+		content : '把fixed置为true,开启fixed定位',
+		fixed : true,
+		bottom : 10,
+		right : 10
+	});
+	$('#d2_2').on('click',function(){
+		d2_2.open()
+	})
+</script>
+	</div>
+	<br/>
+	<h2>1.3方法</h2>
+
+	<div class="block cf">
+<button class="btn" id="d1_4_3" onclick="d1_4_3.open()">open(),close()</button>
+<script>
+	var d1_4_3 = $.dialog({
+		content : 'open(),close()打开和关闭对话框<br><a onClick="d1_4_3.close()">[关闭]</a>'
+	});
+</script>
+	</div>
+
+	<div class="block cf">
+<button class="btn" id="d1_4_2">title()、content()、button()</button>
+<script>
+	var d1_4_2 = $.dialog({
+		content : '通过title()、content()、button()修改标题、内容和按钮',
+		autoReset : true,
+		onTitle : function(){
+			this.title('我的标题！')
+		},
+		onContent : function(){
+			this.content('我的内容！').position();
+		},
+		onButton : function(){
+			this.button(2,{
+				type : 'confirm',
+				text : '按钮已修改',
+				disabled : true
+			})
+		},
+		buttons : [
+			{
+				call : 'title',
+				text : '标题'
+			},
+			{
+				call : 'content',
+				text : '内容'
+			},
+			{
+				call: 'button',
+				text: '按钮'
+			}
+		]
+	});
+
+	$('#d1_4_2').on('click',function(){
+		d1_4_2.open()
+	});
+</script>
+	</div>
+
+	<div class="block cf">
+<button class="btn" id="d1_4_1">width()和height()</button>
+<script>
+	var d1_4_1 = $.dialog({
+		content : '通过width()和height()修改宽高',
+		onSmall: function(){
+			this.width(200,false).height(200,4)
+		},
+		onLarge : function(){
+			this.width(500,false).height(500,4)
+		},
+		buttons : [
+			{
+				call : 'large',
+				text : '扩展'
+			},
+			{
+				call : 'small',
+				text : '收缩'
+			}
+		]
+	});
+
+	$('#d1_4_1').on('click',function(){
+		d1_4_1.open()
+	});
+</script>
+	</div>
+
+	<div class="block cf">
+<button class="btn" id="d1_4_4">position()</button>
+<script>
+	var d1_4_4 = $.dialog({
+		content : 'position()，窗口尺寸改变之后使用，以重新定位窗口到合适的位置。<br><br>参数是0-12数字，代表时钟方向的定位源， 0（默认）为中心定位。<br>' +
+		'position(<select id="d1_4_5_select">' +
+		'<option>0</option>' +
+		'<option>1</option>' +
+		'<option>2</option>' +
+		'<option>3</option>' +
+		'<option>4</option>' +
+		'<option>5</option>' +
+		'<option>6</option>' +
+		'<option>7</option>' +
+		'<option>8</option>' +
+		'<option>9</option>' +
+		'<option>10</option>' +
+		'<option>11</option>' +
+		'<option>12</option>' +
+		'</select>)',
+		width : 280,
+		height : 280,
+		onLarge : function(){
+			var p = $('#d1_4_5_select').val() - 0;
+			this.width(500,false).height(500,4).position(p);
+		},
+		onReset : function(){
+			var p = $('#d1_4_5_select').val() - 0;
+			this.width(280).height(280).position(p);
+		},
+		buttons : [
+			{
+				call : 'large',
+				text : '放大'
+			},
+			{
+				call : 'reset',
+				text : '还原'
+			}
+		]
+	});
+
+	$('#d1_4_4').on('click',function(){
+		d1_4_4.open()
+	});
+</script>
+	</div>
+
+	<div class="block cf">
+<button class="btn" id="d1_4_5">reset()</button>
+<script>
+	var d1_4_5 = $.dialog({
+		content : 'reset()方法重置对话框的尺寸，标题，内容，按钮',
+		// autoReset : true,
+		width : 200,
+		height : 200,
+		buttons : [
+			{
+				text : '重置',
+				call: 'reset'
+			},
+			{
+				type : 'confirm',
+				call : 'confirm',
+				text : '放大'
+			}
+		],
+		onReset : function(){
+			this.reset();
+		},
+		onConfirm : function(){
+			this.width(400)
+				.height(400)
+				.title('XXX')
+				.content('XXX')
+				.position();
+		}
+	});
+	$('#d1_4_5').on('click',function(){
+		d1_4_5.open();
+	});
+</script>
+	</div>
+
+	<div class="block cf">
+<button class="btn" id="d1_4_6">countdown()</button>
+<script>
+	var d1_4_6 = $.dialog({
+		content : 'countdown(n.cb)倒计时',
+		buttons : [
+			{
+				type : 'confirm',
+				call : 'cd',
+				text : '开始倒计时'
+			}
+		],
+		onCd : function(){
+			this.button(0,{
+				text : '倒计时{%cd}',
+				disabled : true
+			}).countdown(5,function(){
+				this.button(0,{
+					text : '开始倒计时',
+					disabled : false
+				});
+				alert('倒计时完成。')
+			});
+		}
+
+	});
+	$('#d1_4_6').on('click',function(){
+		d1_4_6.open();
+	});
+</script>
+	</div>
 	<br/>
 
-	<h2>1.4方法</h2>
-	<button class="btn" id="d1_4_1">width()和height()</button>
-	<script>
-		var d1_4_1 = $.dialog({
-			content : 'asdasdasdasd<br>aasdadsasdad<br>',
-			height : 200,
-			width : 200,
-//			fixed : true,
-			bottom : 10,
-			right : 10,
-			onWidth : function(){
-				this.width(200,false).height(200,4)
-			},
-			onHeight : function(){
-				this.width(500,false).height(500,4)
-			},
-			onTitle : function(){
-				this.title('我的标题！')
-			},
-			onContent : function(){
-				this.content('我的内容！').position();
-//				this.content('<i>我的内容！</i>');
-//				this.content($('#d1_4_1'));
-			},
-			onAll : function(){
-//				this.title('我的标题！').content('我的内容！').position();
-				this.width(600).height(1000).position();
-			},
-			buttons : [
-				{
-					call : 'width',
-					text : 'width'
-				},
-				{
-					call : 'height',
-					text : 'height'
-				},
-//				{
-//					call : 'title',
-//					text : 'title'
-//				},
-//				{
-//					call : 'content',
-//					text : 'content'
-//				},
-//				{
-//					call : 'all',
-//					text : 'all'
-//				}
-			]
-		});
-		$('#d1_4_1').on('click',function(){
-			d1_4_1.open()
-		});
-
-	</script>
-	<br/>
-
-	<h2>1.3结构配置</h2>
-	<button class="btn" id="d3_1">没有标题</button>
-	<button class="btn" id="d3_3">自定义标题内容</button>
-	<button class="btn" id="d3_2">没有关闭按钮</button>
-	<button class="btn" id="d3_4">设置按钮</button>
-	<button class="btn" id="d3_5">设置对齐方向</button>
-	<script>
-		var d3_1 = $.dialog({
-			hasTitle : false,
-			content : '这个对话框没有标题<br>把hasTitle设为false'
-		});
-		$('#d3_1').on('click',function(){
-			d3_1.open()
-		});
-
-		var d3_2 = $.dialog({
-			hasCross : false,
-			content : '这个对话框没有关闭按钮<br>把hasCross设为false<br>按esc或者回车关闭对话框'
-		});
-		$('#d3_2').on('click',function(){
-			d3_2.open()
-		});
-
-		var d3_3 = $.dialog({
-			title : '这是我的标题',
-			content : '自定义标题内容<br>设置title的内容，并且hasTitle不为false'
-		});
-		$('#d3_3').on('click',function(){
-			d3_3.open()
-		});
-
-		var d3_4 = $.dialog({
-			content : '这个对话框有按钮了<br>设置buttons添加按钮',
-			buttons : [
-				{type : 'confirm'}
-			]
-		});
-		$('#d3_4').on('click',function(){
-			d3_4.open()
-		});
-
-		var d3_5 = $.dialog({
-			content : '设置对齐方向<br>标题对齐：titleAlign<br>内容对齐：contentAlign<br>按钮对齐：buttonsAlign',
-			buttons : [
-				{type : 'confirm'}
-			],
-			titleAlign : 'right',
-			contentAlign : 'center',
-			buttonsAlign : 'left'
-		});
-		$('#d3_5').on('click',function(){
-			d3_5.open()
-		})
-	</script>
+	<h2>1.4结构配置</h2>
+	<div class="block cf">
+<button class="btn" id="d3_1">没有标题</button>
+<script>
+	var d3_1 = $.dialog({
+		hasTitle : false,
+		content : '这个对话框没有标题<br>把hasTitle设为false'
+	});
+	$('#d3_1').on('click',function(){
+		d3_1.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d3_3">自定义标题内容</button>
+<script>
+	var d3_3 = $.dialog({
+		title : '这是我的标题',
+		content : '自定义标题内容<br>设置title的内容，并且hasTitle不为false'
+	});
+	$('#d3_3').on('click',function(){
+		d3_3.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d3_2">没有关闭按钮</button>
+<script>
+	var d3_2 = $.dialog({
+		hasCross : false,
+		content : '这个对话框没有关闭按钮<br>把hasCross设为false<br>按esc或者回车关闭对话框'
+	});
+	$('#d3_2').on('click',function(){
+		d3_2.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d3_4">设置按钮</button>
+<script>
+	var d3_4 = $.dialog({
+		content : '这个对话框有按钮了<br>设置buttons添加按钮',
+		buttons : [
+			{type : 'confirm'}
+		]
+	});
+	$('#d3_4').on('click',function(){
+		d3_4.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d3_5">设置对齐方向</button>
+<script>
+	var d3_5 = $.dialog({
+		content : '设置对齐方向<br>标题对齐：titleAlign<br>内容对齐：contentAlign<br>按钮对齐：buttonsAlign',
+		buttons : [
+			{type : 'confirm'}
+		],
+		titleAlign : 'right',
+		contentAlign : 'center',
+		buttonsAlign : 'left'
+	});
+	$('#d3_5').on('click',function(){
+		d3_5.open()
+	})
+</script>
+	</div>
 	<br/>
 </div>
 
@@ -457,355 +688,396 @@
 <h1>2.高级</h1>
 <div class="box">
 	<h2>2.1按钮以及事件</h2>
-	<button class="btn" id="d4_1">取消和确认</button>
-	<button class="btn" id="d4_2">close事件</button>
-	<button class="btn" id="d4_3">open事件</button>
-	<button class="btn" id="d4_4">事件流</button>
-	<button class="btn" id="d4_5">配置事件流</button>
-	<button class="btn" id="d4_6">自定义事件</button>
-	<button class="btn" id="d4_7">配置按钮</button>
+	<div class="block cf">
+<button class="btn" id="d4_1">取消和确认</button>
+<script>
+	var d4_1 = $.dialog({
+		content : '内置两种按钮：取消和确认<br/>取消：cancel，触发onCancel<br/>确认：confirm，触发onConfirm<br/>退出键（esc）触发onCancel<br/>回车键（enter）触发onConfirm',
+		buttons : [
+			{type : 'cancel'},
+			{type : 'confirm'}
+		],
+		onCancel : function(){$.toast('取消:cancel')},
+		onConfirm : function(){$.toast('确认:confirm')}
 
-	<script>
-		var d4_1 = $.dialog({
-			content : '内置两种按钮：取消和确认<br/>取消：cancel，触发onCancel<br/>确认：confirm，触发onConfirm<br/>退出键（esc）触发onCancel<br/>回车键（enter）触发onConfirm',
-			buttons : [
-				{type : 'cancel'},
-				{type : 'confirm'}
-			],
-			onCancel : function(){$.toast('取消:cancel')},
-			onConfirm : function(){$.toast('确认:confirm')}
+	});
+	$('#d4_1').on('click',function(){
+		d4_1.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d4_2">close事件</button>
+<script>
+	var d4_2 = $.dialog({
+		content : '取消和确认事件触发\"之后\"都会关闭对话框，触发onClose<br/>除非前置事件return false',
+		buttons : [
+			{type : 'cancel'},
+			{type : 'confirm'}
+		],
+		onCancel : function(){
+			$.toast('这里return false了 阻止关闭对话框');
+			return false
+		},
+		onConfirm : function(){$.toast('这里没有return false,顺利关闭对话框',300)},
+		onClose : function(){alert('对话框关闭了')}
 
-		});
-		$('#d4_1').on('click',function(){
-			d4_1.open()
-		});
+	});
+	$('#d4_2').on('click',function(){
+		d4_2.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d4_3">open事件</button>
+<script>
+	var d4_3 = $.dialog({
+		content : '这个对话框不会被打开，因为onOpen返回了false',
+		buttons : [
+			{type : 'cancel'},
+			{type : 'confirm'}
+		],
+		onOpen : function(){
+			$.toast('如果onOpen() return false，不会打开对话框',500);
+			return false
+		}
 
+	});
+	$('#d4_3').on('click',function(){
+		d4_3.open()
+	});
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d4_4">事件流</button>
+<script>
+	var d4_4 = $.dialog({
+		content : '一个对话框事件流一般是：<br/>open-><br/>onOpen->[打开]-><br/>onCancel/onConfirm-><br/>onClose-><br/>close->[关闭]<br/>上游事件不return false下游事件依次执行',
+		buttons : [
+			{type : 'cancel'},
+			{type : 'confirm'}
+		],
+		onOpen : function(){
+			return confirm('onOpen:继续？')
+		},
+		onCancel : function(){
+			return confirm('onCancel:继续？')
+		},
+		onConfirm : function(){
+			return confirm('confirm:继续？')
+		},
+		onClose : function(){
+			return confirm('onClose:继续？')
+		}
 
+	});
+	$('#d4_4').on('click',function(){
+		d4_4.open()
+	})
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d4_5">配置事件流</button>
+<script>
+	var d4_5 = $.dialog({
+		content : '取消按钮和esc的默认事件流是cancel->close<br/>确认按钮和回车的默认事件流是confirm->close<br/>通过call属性配置按钮的时间流<br/>通过escCall配置sec的事件流<br/>通过enterCall配置回车的事件流',
+		buttons : [
+			{
+				type : 'cancel',
+				call : 'cancel,cancel,close'
 
-		var d4_2 = $.dialog({
-			content : '取消和确认事件触发\"之后\"都会关闭对话框，触发onClose<br/>除非前置事件return false',
-			buttons : [
-				{type : 'cancel'},
-				{type : 'confirm'}
-			],
-			onCancel : function(){
-				$.toast('这里return false了 阻止关闭对话框');
-				return false
 			},
-			onConfirm : function(){$.toast('这里没有return false,顺利关闭对话框',300)},
-			onClose : function(){alert('对话框关闭了')}
-
-		});
-		$('#d4_2').on('click',function(){
-			d4_2.open()
-		});
-
-		var d4_3 = $.dialog({
-			content : '这个对话框不会被打开，因为onOpen返回了false',
-			buttons : [
-				{type : 'cancel'},
-				{type : 'confirm'}
-			],
-			onOpen : function(){
-				$.toast('如果onOpen() return false，不会打开对话框',500);
-				return false
+			{
+				type : 'confirm',
+				call : 'confirm,confirm,close'
 			}
+		],
+		escCall : 'confirm',
+		enterCall : 'cancel',
+		onCancel : function(){
+			alert('onCancel')
+		},
+		onConfirm : function(){
+			alert('onConfirm')
+		},
+		onClose : function(){
+			alert('onClose')
+		}
 
-		});
-		$('#d4_3').on('click',function(){
-			d4_3.open()
-		});
+	});
+	$('#d4_5').on('click',function(){
+		d4_5.open()
+	})
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d4_6">自定义事件</button>
+<script>
+	var d4_6 = $.dialog({
+		content : '除了onOpen,onClose,onCancel,onConfirm外<br/>可任意定义on+大写字母开头的事件<br/>配置其事件流时去掉on，第一个字母小写即可<br/>自定义事件配合自定义事件流，增强灵活性<br/>',
+		buttons : [
+			{
+				text : 'aaa',
+				call : 'aaa'
 
-		var d4_4 = $.dialog({
-			content : '一个对话框事件流一般是：<br/>open-><br/>onOpen->[打开]-><br/>onCancel/onConfirm-><br/>onClose-><br/>close->[关闭]<br/>上游事件不return false下游事件依次执行',
-			buttons : [
-				{type : 'cancel'},
-				{type : 'confirm'}
-			],
-			onOpen : function(){
-				return confirm('onOpen:继续？')
 			},
-			onCancel : function(){
-				return confirm('onCancel:继续？')
-			},
-			onConfirm : function(){
-				return confirm('confirm:继续？')
-			},
-			onClose : function(){
-				return confirm('onClose:继续？')
+			{
+				text : 'bbb',
+				call : 'bbb'
 			}
+		],
+		onAaa : function(){
+			alert('onAaa')
+		},
+		onBbb : function(){
+			alert('onBbb')
+		}
 
-		});
-		$('#d4_4').on('click',function(){
-			d4_4.open()
-		})
+	});
+	$('#d4_6').on('click',function(){
+		d4_6.open()
+	})
 
-		var d4_5 = $.dialog({
-			content : '取消按钮和esc的默认事件流是cancel->close<br/>确认按钮和回车的默认事件流是confirm->close<br/>通过call属性配置按钮的时间流<br/>通过escCall配置sec的事件流<br/>通过enterCall配置回车的事件流',
-			buttons : [
-				{
-					type : 'cancel',
-					call : 'cancel,cancel,close'
-
-				},
-				{
-					type : 'confirm',
-					call : 'confirm,confirm,close'
-				}
-			],
-			escCall : 'confirm',
-			enterCall : 'cancel',
-			onCancel : function(){
-				alert('onCancel')
-			},
-			onConfirm : function(){
-				alert('onConfirm')
-			},
-			onClose : function(){
-				alert('onClose')
-			}
-
-		});
-		$('#d4_5').on('click',function(){
-			d4_5.open()
-		})
-
-		var d4_6 = $.dialog({
-			content : '除了onOpen,onClose,onCancel,onConfirm外<br/>可任意定义on+大写字母开头的事件<br/>配置其事件流时去掉on，第一个字母小写即可<br/>自定义事件配合自定义事件流，增强灵活性<br/>',
-			buttons : [
-				{
-					text : 'aaa',
-					call : 'aaa'
-
-				},
-				{
-					text : 'bbb',
-					call : 'bbb'
-				}
-			],
-			onAaa : function(){
-				alert('onAaa')
-			},
-			onBbb : function(){
-				alert('onBbb')
-			}
-
-		});
-		$('#d4_6').on('click',function(){
-			d4_6.open()
-		})
-
-		var d4_7 = $.dialog({
-			content : 'type用于定义样式和默认事件流，<br/>call覆盖本按钮默认事件流，<br/>text定义按钮文字，<br/>id给按钮一个标记用于获取按钮，<br/>disabled禁用按钮',
-			buttons : [
-				{type : 'cancel',disabled:true,text:'被禁用的取消按钮',id:'b1'},
-				{type : 'confirm',call:'enable',text:'解除禁用'}
-			],
-			onCancel : function(){$.toast('取消:cancel')},
-			onConfirm : function(){$.toast('确认:confirm')},
-			onEnable : function(){
-				this.button(0,{
-					disabled : false,
-					text : '取消'
-				});
-//				d4_7.getButton('b1').removeClass('disabled').text('取消')
-			}
-
-		});
-		$('#d4_7').on('click',function(){
-			d4_7.open()
-		});
-
-
-
-
-	</script>
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d4_7">配置按钮</button>
+<script>
+	var d4_7 = $.dialog({
+		content : 'type用于定义样式和默认事件流，<br/>call覆盖本按钮默认事件流，<br/>text定义按钮文字，<br/>id给按钮一个标记用于获取按钮，<br/>disabled禁用按钮',
+		buttons : [
+			{type : 'cancel',disabled:true,text:'被禁用的取消按钮',id:'b1'},
+			{type : 'confirm',call:'enable',text:'解除禁用'}
+		],
+		onCancel : function(){$.toast('取消:cancel')},
+		onConfirm : function(){$.toast('确认:confirm')},
+		onEnable : function(){
+			this.button(0,{
+				disabled : false,
+				text : '取消'
+			});
+		}
+	});
+	$('#d4_7').on('click',function(){
+		d4_7.open()
+	});
+</script>
+	</div>
 	<br/>
 
 	<h2>2.2倒计时</h2>
-	<button class="btn" id="d5_1">计时关闭</button>
-	<button class="btn" id="d5_2">显示倒计时数字</button>
-	<button class="btn" id="d5_3">配置倒计时事件流</button>
-	<script>
-		var d5_1 = $.dialog({
-			content : '设置countdown属性开启倒计时功能<br>倒计时结束后默认关闭对话框<br>这个对话框6秒钟之后自动关闭',
-			countdown : 6
-		});
-		$('#d5_1').on('click',function(){
-			d5_1.open()
-		})
-
-		var d5_2 = $.dialog({
-			title : '{%cd}秒之后关闭',
-			content : '使用{&percnt;cd}标记倒计时数字<br>{%cd}秒之后关闭<br>',
-			onAaa : function(){
-				alert('onAaa')
-			},
-			onBbb : function(){
-				alert('onBbb')
-			},
-			buttons : [
-				{
-					text:'{%cd}秒之后关闭'
-				}
-			],
-			countdown : 6
-		});
-		$('#d5_2').on('click',function(){
-			d5_2.open()
-		})
-
-		var d5_3 = $.dialog({
-			content : 'countdownCall属性设置倒计时的事件流<br/>{%cd}秒之后执行onAaa,onBbb,onClose<br>',
-			countdownCall : 'aaa,bbb,close',
-			onAaa : function(){
-				alert('onAaa')
-			},
-			onBbb : function(){
-				alert('onBbb')
-			},
-			onClose : function(){
-				return confirm('关闭对话框吗？')
-			},
-			countdown : 6
-		});
-		$('#d5_3').on('click',function(){
-			d5_3.open()
-		})
-	</script>
+	<div class="block cf">
+<button class="btn" id="d5_1">计时关闭</button>
+<script>
+	var d5_1 = $.dialog({
+		content : '设置countdown属性开启倒计时功能<br>倒计时结束后默认关闭对话框<br>这个对话框6秒钟之后自动关闭',
+		countdown : 6
+	});
+	$('#d5_1').on('click',function(){
+		d5_1.open()
+	})
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d5_2">显示倒计时数字</button>
+<script>
+	var d5_2 = $.dialog({
+		title : '{%cd}秒之后关闭',
+		content : '使用{&percnt;cd}标记倒计时数字<br>{%cd}秒之后关闭<br>',
+		onAaa : function(){
+			alert('onAaa')
+		},
+		onBbb : function(){
+			alert('onBbb')
+		},
+		buttons : [
+			{
+				text:'{%cd}秒之后关闭'
+			}
+		],
+		countdown : 6
+	});
+	$('#d5_2').on('click',function(){
+		d5_2.open()
+	})
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d5_3">配置倒计时事件流</button>
+<script>
+	var d5_3 = $.dialog({
+		content : 'countdownCall属性设置倒计时的事件流<br/>{%cd}秒之后执行onAaa,onBbb,onClose<br>',
+		countdownCall : 'aaa,bbb,close',
+		onAaa : function(){
+			alert('onAaa')
+		},
+		onBbb : function(){
+			alert('onBbb')
+		},
+		onClose : function(){
+			return confirm('关闭对话框吗？')
+		},
+		countdown : 6
+	});
+	$('#d5_3').on('click',function(){
+		d5_3.open()
+	})
+</script>
+	</div>
 	<br/>
 
 	<h2>2.3自定义dom</h2>
-	<button class="btn" id="d6_1">自定义dom</button>
-	<div id="d6_1_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
-		$('#XXX').dialog() ，创建一个自定义dom的对话框。<br>
-		由于完全自定义dom结构，定义对话框结构和内容的属性失效。<br>
-		如content,title,buttons,titleAlign等<br>
-		<div style="color: red;" data-role="content">
-			<p>注意:</p>
-			<p>如果开启了拖拽效果，选中文字的功能失效，这两个功能是互斥的。</p>
-			<p>如果希望用户复制，请把内容包裹在有data-role="content"的属性的元素里，像这段文字一样。</p>
-			<p>如果希望在可复制内容里添加一个 <span dragbar style="cursor: move;">[拖拽手柄]</span>，请给此元素添加dragbar属性</p>
-		</div>
-		<a style="color:#ddd" href="javascript:;" onclick="d6_1.close()">[关闭]</a>
+	<div class="block cf">
+<button class="btn" id="d6_1">自定义dom</button>
+<div id="d6_1_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
+	$('#XXX').dialog() ，创建一个自定义dom的对话框。<br>
+	由于完全自定义dom结构，定义对话框结构和内容的属性失效。<br>
+	如content,title,buttons,titleAlign等<br>
+	<div style="color: red;" data-role="content">
+		<p>注意:</p>
+		<p>如果开启了拖拽效果，选中文字的功能失效，这两个功能是互斥的。</p>
+		<p>如果希望用户复制，请把内容包裹在有data-role="content"的属性的元素里，像这段文字一样。</p>
+		<p>如果希望在可复制内容里添加一个 <span dragbar style="cursor: move;">[拖拽手柄]</span>，请给此元素添加dragbar属性</p>
 	</div>
-
-	<button class="btn" id="d6_2">定义按钮和倒计时数字</button>
-	<div id="d6_2_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
-		给任意元素添加属性：data-role="cd"，把此元素定义为倒计时数字<br>
-		如：&lt;span data-role="cd"&gt;&lt;/span&gt;<br>
-		<span data-role="cd"></span>秒之后关闭对话框<br><br>
-		给任意元素添加属性：data-role="btn:事件流"，来定义此元素的事件流（点击触发）<br>
-		如下面的确认按钮：&lt;a data-role="btn:confirm,close"&gt;[确认]&lt;/a&gt;<br>
-		<a style="color:#ddd" href="javascript:;" data-role="btn:confirm,close">[确认]</a>
+	<a style="color:#ddd" href="javascript:;" onclick="d6_1.close()">[关闭]</a>
+</div>
+<script>
+	var d6_1 = $('#d6_1_dom').dialog();
+	$('#d6_1').on('click',function(){
+		d6_1.open()
+	})
+</script>
 	</div>
-
-	<button class="btn" id="d6_3">嵌入iframe</button>
-	<iframe id="d6_3_dom" style=" background: #fff;" _src="https://m.taobao.com/" frameborder="0" width="320" height="500"></iframe>
-
-	<button class="btn" id="d6_4">使用自带样式</button>
-	<div class="mgDialog" id="d6_4_dom">
-		<div class="mgDialog_header">
-			<div class="mgDialog_title">使用自带样式</div>
-			<i class="mgDialog_cross" data-role="btn:cancel,close">×</i>
-		</div>
-		<div class="mgDialog_content">
-			如果需要使用自带的样式<br>请参考此对话框的结构、class、data-role
-		</div>
-		<div class="mgDialog_footer">
-			<button class="mgDialog_button disabled" data-role="btn:cancel,close">取消</button>
-			<button class="mgDialog_button mgDialog_button_confirm" data-role="btn:confirm,close">确定</button>
-		</div>
+	<div class="block cf">
+<button class="btn" id="d6_2">定义按钮和倒计时数字</button>
+<div id="d6_2_dom" style="width: 400px; padding: 20px; line-height: 24px; background: #333; color: #fff;">
+	给任意元素添加属性：data-role="cd"，把此元素定义为倒计时数字<br>
+	如：&lt;span data-role="cd"&gt;&lt;/span&gt;<br>
+	<span data-role="cd"></span>秒之后关闭对话框<br><br>
+	给任意元素添加属性：data-role="btn:事件流"，来定义此元素的事件流（点击触发）<br>
+	如下面的确认按钮：&lt;a data-role="btn:confirm,close"&gt;[确认]&lt;/a&gt;<br>
+	<a style="color:#ddd" href="javascript:;" data-role="btn:confirm,close">[确认]</a>
+</div>
+<script>
+	var d6_2 = $('#d6_2_dom').dialog({
+		onConfirm : function(){
+			alert('onConfirm')
+		},
+		onClose : function(){
+			alert('onClose')
+		},
+		countdown : 120
+	});
+	$('#d6_2').on('click',function(){
+		d6_2.open()
+	})
+</script>
 	</div>
-
-	<script>
-		var d6_1 = $('#d6_1_dom').dialog();
-		$('#d6_1').on('click',function(){
-			d6_1.open()
-		})
-
-		var d6_2 = $('#d6_2_dom').dialog({
-			onConfirm : function(){
-				alert('onConfirm')
-			},
-			onClose : function(){
-				alert('onClose')
-			},
-			countdown : 120
-		});
-		$('#d6_2').on('click',function(){
-			d6_2.open()
-		})
-
-		var d6_3 = $('#d6_3_dom').dialog({
-			onOpen : function(){
-				$('#d6_3_dom').attr('src',$('#d6_3_dom').attr('_src'))
-			}
-		});
-		$('#d6_3').on('click',function(){
-			d6_3.open()
-		})
-
-		var d6_4 = $('#d6_4_dom').dialog();
-		$('#d6_4').on('click',function(){
-			d6_4.open()
-		})
-	</script>
-	<br/>
+	<div class="block cf">
+<button class="btn" id="d6_3">嵌入iframe</button>
+<iframe id="d6_3_dom" style=" background: #fff;" _src="https://m.taobao.com/" frameborder="0" width="320" height="500"></iframe>
+<script>
+	var d6_3 = $('#d6_3_dom').dialog({
+		onOpen : function(){
+			$('#d6_3_dom').attr('src',$('#d6_3_dom').attr('_src'))
+		}
+	});
+	$('#d6_3').on('click',function(){
+		d6_3.open()
+	})
+</script>
+	</div>
+	<div class="block cf">
+<button class="btn" id="d6_4">使用自带样式</button>
+<div class="mgDialog" id="d6_4_dom">
+	<div class="mgDialog_header">
+		<div class="mgDialog_title">使用自带样式</div>
+		<i class="mgDialog_cross" data-role="btn:cancel,close">×</i>
+	</div>
+	<div class="mgDialog_content" data-role="content">
+		如果需要使用自带的样式<br>请参考此对话框的结构、class、data-role
+		<select name="" id="">
+			<option value="1">1</option>
+			<option value="2">2</option>
+			<option value="3">3</option>
+		</select>
+	</div>
+	<div class="mgDialog_footer">
+		<button class="mgDialog_button disabled" data-role="btn:cancel,close">取消</button>
+		<button class="mgDialog_button mgDialog_button_confirm" data-role="btn:confirm,close">确定</button>
+	</div>
+</div>
+<script>
+	var d6_4 = $('#d6_4_dom').dialog();
+	$('#d6_4').on('click',function(){
+		d6_4.open()
+	})
+</script>
+	</div>
+<br/>
 
 	<h2>2.4多窗口</h2>
-	<button class="btn" id="d7_1">同时打开多个窗口</button>
-	<script>
-		var d7_1 = $.dialog({
-			title : '对话框1',
-			content : '最多产生一个遮罩层，并且最后一个窗口关闭后才会删除遮罩层',
-			width:300,
-			height : 300,
-			top : 20,
-			left : 320
-		});
-		var d7_2 = $.dialog({
-			title : '对话框2',
-			content : '键盘事件只对最上层窗口有效，不会同时触发',
-			width:300,
-			height : 300,
-			top : 120,
-			left : 420
-		});
-		var d7_3 = $.dialog({
-			title : '对话框3',
-			content : '可以同时打开多个窗口<br>按【回车】关闭窗口',
-			width:300,
-			height : 300,
-			top : 220,
-			left : 520,
-			onCancel : function(){
-				d7_1.width(200)
-				return false
-			}
-		})
-		$('#d7_1').on('click',function(){
-			d7_1.open();
-			setTimeout(function(){
-				d7_2.open()
-			},200);
-			setTimeout(function(){
-				d7_3.open()
-			},400);
+	<div class="block cf">
+<button class="btn" id="d7_1">同时打开多个窗口</button>
+<script>
+	var d7_1 = $.dialog({
+		title : '对话框1',
+		content : '最多产生一个遮罩层，并且最后一个窗口关闭后才会删除遮罩层',
+		width:300,
+		height : 300,
+		top : 20,
+		left : 320
+	});
+	var d7_2 = $.dialog({
+		title : '对话框2',
+		content : '键盘事件只对最上层窗口有效，不会同时触发',
+		width:300,
+		height : 300,
+		top : 120,
+		left : 420
+	});
+	var d7_3 = $.dialog({
+		title : '对话框3',
+		content : '可以同时打开多个窗口<br>按【回车】关闭窗口',
+		width:300,
+		height : 300,
+		top : 220,
+		left : 520
+	});
+	$('#d7_1').on('click',function(){
+		d7_1.open();
+		setTimeout(function(){
+			d7_2.open()
+		},200);
+		setTimeout(function(){
+			d7_3.open()
+		},400);
 
-		})
-	</script>
+	})
+</script>
+	</div>
+
 </div>
 
 <hr/>
 
 <h1>3.内置方法</h1>
-<div class="box">
-	<button class="btn" onclick="$.alert('alert：用于显示提示文字')">alert</button>
-	<button class="btn" onclick="$.confirm('confirm：关闭时执行回调<br>按取消、右上角的叉、esc键传入false<br>按确定、回车键传入true',function(e){$.toast(e ? '用户已确认' : '用户已取消')})" >confirm</button>
-	<button class="btn" onclick="$.prompt('prompt：记录用户输入内容',function(val){$.toast('用户输入：' + val)})" >prompt</button>
-	<button class="btn" onclick="$.toast('toast：显示一个会自动关闭的文字提示')" >toast</button>
-	<button class="btn" onclick="$.alert('除了toast外其他内置方法都可接收一个可选参数用于定义标题.','自定义标题')" >自定义标题</button>
+<div class="box cf">
+	<div class="block cf">
+<button class="btn" onclick="$.alert('alert：用于显示提示文字')">alert</button>
+	</div>
+	<div class="block cf">
+<button class="btn" onclick="$.confirm('confirm：关闭时执行回调<br>按取消、右上角的叉、esc键传入false<br>按确定、回车键传入true',function(e){$.toast(e ? '用户已确认' : '用户已取消')})" >confirm</button>
+	</div>
+	<div class="block cf">
+<button class="btn" onclick="$.prompt('prompt：记录用户输入内容',function(val){$.toast('用户输入：' + val)})" >prompt</button>
+	</div>
+	<div class="block cf">
+<button class="btn" onclick="$.toast('toast：显示一个会自动关闭的文字提示')" >toast</button>
+	</div>
+	<div class="block cf">
+<button class="btn" onclick="$.alert('除了toast外其他内置方法都可接收一个可选参数用于定义标题.','自定义标题')" >自定义标题</button>
+	</div>
 </div>
 
 </body>

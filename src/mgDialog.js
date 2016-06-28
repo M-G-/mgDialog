@@ -1,59 +1,32 @@
 /*!
-* mgDialog 基于jQuery的对话框组件
+* mgDialog jQuery对话框插件
 * author: Mango
 * version: 0.1
+* github: https://github.com/M-G-/mgDialog
 *
 * 实现功能:
-* 结构可配置:标题，按钮，关闭X，遮罩(模态)
-* 可完全自定义dom结构
-* 两种定位方式:absolute(默认)、fixed
-* 事件可配置:按钮，按键，计时
-* 自定义事件
-* 按键监听
-* 倒计时
-* 出入场动画
-* 多窗口
-* 拖拽
-* 内置方法 alert confirm prompt toast
+* 	结构可配置:标题，按钮，关闭X，遮罩(模态)
+* 	可完全自定义dom结构
+* 	两种定位方式:absolute(默认)、fixed
+* 	事件可配置:按钮，按键，计时
+* 	自定义事件
+* 	按键监听
+* 	倒计时
+* 	出入场动画
+* 	多窗口
+* 	拖拽
+* 	内置方法:alert confirm prompt toast
 *
-* 计划:
-* title(str|jqObj,position) [√]
-* content(str|jqObj,position) [√]
-* width(num,position) [√]
-* height(num,position) [√]
-* button(str|jqObj) [√]
-* countdown(num) [√]
-* position() [√]
-* autoFocus [√]
-* 链式调用 [√]
-* 表单元素无法输入 [√]
-* 输入时按回车键不符合预期 [√]
-* 自定义margin 必须为0 [√]
-* 按钮底部定位 [√]
-* drag对话框选中文字 [√]
-* 遮罩特效使对话框z-index失效，故去掉 [√]
-* destroy()之后，自定义dom对话框完全还原 [√]
-* 关闭mask后 窗口scroll值还原 [√]
-* button:添加hidden属性，去掉id属性，把button添加到dom.button，删除getButton() [√]
-* 自定义dom和自带dom的外层class分开，防止样式干扰 [√]
-* window.onresize [√]
-* reset() [√]
-* width,height 支持auto [√]
-*
-* 期望:
-* focus()
-* blur()
-* quickClose()
-* 动画可配置
-*
-* 二次封装，综合应用：
-* 视频滚屏弹出效果
-* 中奖弹出效果
-* 图片预览效果
-* 大尺寸图片效果
-*
+* 其他特性:
+* 	链式调用
+* 	拖拽对话框和选中文字
+* 	destroy()之后，自定义dom对话框完全还原
+* 	关闭mask后，窗口scroll值还原
+* 	自定义dom和自带dom的外层class分开，防止样式干扰
+* 	window.onresize时自动定位
 * */
 (function(window,$,document,undefined){
+	"use strict";
 
 	//全局默认值
 	var _baseZ		= 1000,			//z-index基准 遮罩的z-index 为_baseZ，对话框的依次累加
@@ -149,13 +122,14 @@
 
 	//根据id使对话框获得焦点(如果noFocus=true，则只移动到最高层，并不获得焦点)
 	function focusDialog(id,noFocus){
-		var max = -1000;
-		var current = _dialogs[id];
-		var other;
+		var max = -1000,
+			current = _dialogs[id],
+			other;
 
 		if(_opened <= 1){
 			current._zIndex = _baseZ + 1;
 		}else{
+			var name;
 			for(name in _dialogs){
 				other = _dialogs[name];
 
@@ -180,9 +154,10 @@
 	function focusLast(){
 		if(_opened === 0) return;
 
-		var max = -1000;
-		var id = '';
-		var current;
+		var max = -1000,
+			id = '',
+			current,
+			name;
 		for(name in _dialogs){
 			current = _dialogs[name];
 			if(current._bOpen){
@@ -282,8 +257,9 @@
 		clearTimeout(_timer);
 
 		_timer = setTimeout(function(){
+			var name;
 			for(name in _dialogs){
-				_dialogs[name].setPosition()
+				_dialogs[name]._bOpen && _dialogs[name].setPosition()
 			}
 		},600);
 
@@ -679,7 +655,7 @@
 			var btn = this.dom.buttons.eq(index);
 
 			if(typeof opt.text === 'string'){
-				btn.html(opt.text);
+				btn.html(getHtml(opt.text));
 			}
 
 			if(typeof opt.call === 'string'){
@@ -704,7 +680,7 @@
 
 		},
 		//*
-		countdown : function(cd,fb){
+		countdown : function(cd,cb){
 			var that = this;
 			if(typeof cd === 'number' && cd > 0){
 				var cdWrap = this.dom.wrap.find('[data-role=cd]');
@@ -720,10 +696,10 @@
 					}else{
 						cdWrap.text(0);
 						clearInterval(that.cdTimer);
-						if(typeof fb === 'function'){
-							fb.call(this)
-						}else if(typeof fb === 'string'){
-							that.trigger(fb)
+						if(typeof cb === 'function'){
+							cb.call(that)
+						}else if(typeof cb === 'string'){
+							that.trigger(cb)
 						}else{
 							that.trigger(that.config.countdownCall);
 						}
@@ -937,6 +913,7 @@
 				this.dom.wrap.remove();
 			}
 
+			var name;
 			for(name in this.dom){
 				this.dom[name] = null;
 			}

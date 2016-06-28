@@ -1,4 +1,4 @@
-# mgDialog 对话框组件
+# mgDialog jQuery对话框插件
 
 
 ## 基础
@@ -226,11 +226,6 @@ $.alert('这是一个提示框。');
 	> 参数：number | auto(string)；
 	> 返回：this；
 
-0. countdown(n,cb)
-	> 说明：倒计时；
-	> 参数：n [number] 倒计时秒数，cb [string|function] 回调 参数为事件流定义或者函数 默认值是配置项中countdownCall的值；
-	> 返回：this；
-	
 0. position(origin)
 	> 说明：对话框重定位，改变对话框大小后可能用到；
 	> 参数：origin [number:0-12] 定位源 代表时钟方向 0（默认）为中心定位；
@@ -241,6 +236,11 @@ $.alert('这是一个提示框。');
 	> 参数：无；
 	> 返回：this；
 	
+0. countdown(n,cb)
+	> 说明：倒计时；
+	> 参数：n [number] 倒计时秒数，cb [string|function] 回调 参数为事件流定义或者函数 默认值是配置项中countdownCall的值；
+	> 返回：this；
+
 0. trigger(call)
 	> 说明：调用已定义的事件流；
 	> 参数：string [事件流] ；
@@ -293,7 +293,21 @@ $.alert('这是一个提示框。');
 ## demos
 待续
 
-
 ## 综合应用和二次封装
-待续
+
+* 视频滚屏弹出效果
+* 中奖弹出效果
+* 图片预览效果
+* 查看超大尺寸图片
+* 待续
+
+
+---
+
+后续可能增加的功能
+
+* focus()
+* blur()
+* 点击空白处关闭对话框
+* 动画可配置
 
